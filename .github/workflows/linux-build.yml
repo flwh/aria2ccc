@@ -1,5 +1,5 @@
 # Linux 环境自动编译：用 .NET SDK 编译 net481 WinForms exe（参考程序集方式），
-# 产物为可在 Windows 运行的 aria-gui.exe：上传为 artifact；Release 为手动发布。
+# 产出 AnyCPU 与 Windows on ARM（ARM64）两个版本：上传为 artifact；Release 为手动发布。
 name: linux-build
 
 on:
@@ -32,19 +32,26 @@ jobs:
         with:
           dotnet-version: 8.0.x
 
-      - name: 编译（net481 参考程序集 + C# 5）
+      - name: 编译（AnyCPU）
         run: dotnet build aria-gui.csproj -c Release --nologo
+
+      - name: 编译 ARM64（Windows on ARM 原生版）
+        run: dotnet build aria-gui.csproj -c Release -p:PlatformTarget=arm64 -p:AssemblyName=aria-gui-arm64 --nologo
 
       - name: 校验产物
         run: |
           ls -l bin/Release/net481/
           test -f bin/Release/net481/aria-gui.exe
+          test -f bin/Release/net481/aria-gui-arm64.exe
+          file bin/Release/net481/aria-gui.exe bin/Release/net481/aria-gui-arm64.exe
 
-      - name: 上传 aria-gui.exe（artifact）
+      - name: 上传两个 exe（artifact）
         uses: actions/upload-artifact@v4
         with:
           name: aria-gui-exe
-          path: bin/Release/net481/aria-gui.exe
+          path: |
+            bin/Release/net481/aria-gui.exe
+            bin/Release/net481/aria-gui-arm64.exe
           if-no-files-found: error
 
       - name: 发布到 Releases（仅手动触发）
@@ -53,5 +60,7 @@ jobs:
         with:
           # 填了版本号 → 用它作 tag；留空 → build-<运行号>
           tag_name: ${{ inputs.version != '' && inputs.version || format('build-{0}', github.run_number) }}
-          files: bin/Release/net481/aria-gui.exe
+          files: |
+            bin/Release/net481/aria-gui.exe
+            bin/Release/net481/aria-gui-arm64.exe
           generate_release_notes: true
