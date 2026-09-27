@@ -1,17 +1,22 @@
 # Linux 环境自动编译：用 .NET SDK 编译 net481 WinForms exe（参考程序集方式），
-# 产物为可在 Windows 运行的 aria-gui.exe，并作为 artifact 上传。
+# 产物为可在 Windows 运行的 aria-gui.exe：上传为 artifact，并自动发布到 Releases。
 name: linux-build
 
 on:
   push:
     # main = 仓库原有项目；aria2 = 本项目（aria-gui）代码所在分支
     branches: [ main, aria2 ]
+    # 推送 v* 标签 → 以标签为版本的正式 Release；分支推送 → build-<运行号> 快照
+    tags: [ 'v*' ]
   pull_request:
   workflow_dispatch:
 
 jobs:
   build:
     runs-on: ubuntu-latest
+    # 创建 Release 需要写权限（默认 token 为只读）
+    permissions:
+      contents: write
 
     steps:
       - name: 检出代码
@@ -30,9 +35,19 @@ jobs:
           ls -l bin/Release/net481/
           test -f bin/Release/net481/aria-gui.exe
 
-      - name: 上传 aria-gui.exe
+      - name: 上传 aria-gui.exe（artifact）
         uses: actions/upload-artifact@v4
         with:
           name: aria-gui-exe
           path: bin/Release/net481/aria-gui.exe
           if-no-files-found: error
+
+      - name: 自动发布到 Releases
+        # 仅 push 触发发布（PR 与手动触发不发布）
+        if: github.event_name == 'push'
+        uses: softprops/action-gh-release@v2
+        with:
+          # 推 v* 标签 → tag_name 用标签名（如 v1.1）；分支推送 → build-<运行号>
+          tag_name: ${{ startsWith(github.ref, 'refs/tags/') && github.ref_name || format('build-{0}', github.run_number) }}
+          files: bin/Release/net481/aria-gui.exe
+          generate_release_notes: true
