@@ -4,7 +4,8 @@ name: linux-build
 
 on:
   push:
-    branches: [ main ]
+    # main = 仓库原有项目；aria2 = 本项目（aria-gui）代码所在分支
+    branches: [ main, aria2 ]
   pull_request:
   workflow_dispatch:
 
