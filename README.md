@@ -35,7 +35,7 @@ powershell -ExecutionPolicy Bypass -File build\run-tests.ps1
 powershell -ExecutionPolicy Bypass -File build\pack-extension.ps1
 ```
 
-GitHub Actions：推送到 GitHub 后在 Linux 环境自动编译并上传 `aria-gui.exe`（AnyCPU）与 `aria-gui-arm64.exe`（Windows on ARM 原生）为 artifact；Releases 为手动发布（工作流 `.github/workflows/linux-build.yml`；基于 net481 参考程序集，无需 Windows 即可交叉编译）。
+GitHub Actions：推送到 GitHub 后在 Linux 环境自动编译并上传 `aria-gui-x64.exe`（x64）与 `aria-gui-arm64.exe`（Windows on ARM 原生）为 artifact；Releases 为手动发布（工作流 `.github/workflows/linux-build.yml`；基于 net481 参考程序集，无需 Windows 即可交叉编译）。
 
 ## 使用
 
