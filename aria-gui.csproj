@@ -1,0 +1,42 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    aria-gui 的 Linux/跨平台编译定义（Windows 本地仍用 build\build.ps1 + 系统 csc）。
+    经 Microsoft.NETFramework.ReferenceAssemblies 在非 Windows 环境获取 .NET Framework 4.8.1
+    参考程序集，因此可在 Linux 上编译出可在 Windows 运行的 WinForms exe。
+  -->
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net481</TargetFramework>
+    <AssemblyName>aria-gui</AssemblyName>
+    <!-- 与 Windows 自带 csc（.NET Framework 4.x 编译器）保持同一语言级别 -->
+    <LangVersion>5</LangVersion>
+    <Nullable>disable</Nullable>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <!-- 关闭默认通配，显式列出自有文件，避免把 tests 等无关项卷入 -->
+    <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
+    <EnableDefaultEmbeddedResourceItems>false</EnableDefaultEmbeddedResourceItems>
+    <EnableDefaultNoneItems>false</EnableDefaultNoneItems>
+    <!-- 对齐 build.ps1 的 /win32icon -->
+    <ApplicationIcon>assets/app.ico</ApplicationIcon>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Include="src/**/*.cs" />
+    <!-- 对齐 build.ps1 的 /resource:...,aria2c.exe（Embed.cs 按逻辑名 "aria2c.exe" 读取） -->
+    <EmbeddedResource Include="assets/aria2c/aria2c.exe" LogicalName="aria2c.exe" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Reference Include="System" />
+    <Reference Include="System.Core" />
+    <Reference Include="System.Drawing" />
+    <Reference Include="System.Windows.Forms" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- 非 Windows 环境下提供 net481 参考程序集（仅编译期，不分发） -->
+    <PackageReference Include="Microsoft.NETFramework.ReferenceAssemblies" Version="1.0.3" PrivateAssets="All" />
+  </ItemGroup>
+
+</Project>

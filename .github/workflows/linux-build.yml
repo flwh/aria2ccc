@@ -1,0 +1,37 @@
+# Linux 环境自动编译：用 .NET SDK 编译 net481 WinForms exe（参考程序集方式），
+# 产物为可在 Windows 运行的 aria-gui.exe，并作为 artifact 上传。
+name: linux-build
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: 检出代码
+        uses: actions/checkout@v4
+
+      - name: 安装 .NET SDK
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 8.0.x
+
+      - name: 编译（net481 参考程序集 + C# 5）
+        run: dotnet build aria-gui.csproj -c Release --nologo
+
+      - name: 校验产物
+        run: |
+          ls -l bin/Release/net481/
+          test -f bin/Release/net481/aria-gui.exe
+
+      - name: 上传 aria-gui.exe
+        uses: actions/upload-artifact@v4
+        with:
+          name: aria-gui-exe
+          path: bin/Release/net481/aria-gui.exe
+          if-no-files-found: error

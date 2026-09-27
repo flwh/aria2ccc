@@ -1,6 +1,11 @@
-# 构建产物（仓库根目录与 build 目录的 exe）
+# 构建产物（仓库根目录与 build 目录的 exe；扩展分发包 zip）
 /*.exe
 build/*.exe
+/*.zip
+
+# .NET SDK 构建产物（dotnet build：bin/ 与 obj/）
+bin/
+obj/
 
 # 运行时产物（含用户配置/历史，不入库）
 aria2.session
