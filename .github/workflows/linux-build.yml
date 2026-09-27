@@ -32,26 +32,35 @@ jobs:
         with:
           dotnet-version: 8.0.x
 
+      # 两次 build 共用同一 obj 目录：MSBuild 增量清理会删除「上次 build 写过、
+      # 本次不再产出」的文件（AssemblyName 变化所致），因此每次编译后立即把
+      # 产物复制到独立的 dist/，避免被下一次 build 清掉。
       - name: 编译 x64
-        run: dotnet build aria-gui.csproj -c Release -p:PlatformTarget=x64 -p:AssemblyName=aria-gui-x64 --nologo
+        run: |
+          dotnet build aria-gui.csproj -c Release -p:PlatformTarget=x64 -p:AssemblyName=aria-gui-x64 --nologo
+          mkdir -p dist
+          cp bin/Release/net481/aria-gui-x64.exe dist/
 
       - name: 编译 ARM64（Windows on ARM 原生版）
-        run: dotnet build aria-gui.csproj -c Release -p:PlatformTarget=arm64 -p:AssemblyName=aria-gui-arm64 --nologo
+        run: |
+          dotnet build aria-gui.csproj -c Release -p:PlatformTarget=arm64 -p:AssemblyName=aria-gui-arm64 --nologo
+          mkdir -p dist
+          cp bin/Release/net481/aria-gui-arm64.exe dist/
 
       - name: 校验产物
         run: |
-          ls -l bin/Release/net481/
-          test -f bin/Release/net481/aria-gui-x64.exe
-          test -f bin/Release/net481/aria-gui-arm64.exe
-          file bin/Release/net481/aria-gui-x64.exe bin/Release/net481/aria-gui-arm64.exe
+          ls -l dist/
+          test -f dist/aria-gui-x64.exe
+          test -f dist/aria-gui-arm64.exe
+          file dist/aria-gui-x64.exe dist/aria-gui-arm64.exe
 
       - name: 上传两个 exe（artifact）
         uses: actions/upload-artifact@v4
         with:
           name: aria-gui-exe
           path: |
-            bin/Release/net481/aria-gui-x64.exe
-            bin/Release/net481/aria-gui-arm64.exe
+            dist/aria-gui-x64.exe
+            dist/aria-gui-arm64.exe
           if-no-files-found: error
 
       - name: 发布到 Releases（仅手动触发）
@@ -61,6 +70,6 @@ jobs:
           # 填了版本号 → 用它作 tag；留空 → build-<运行号>
           tag_name: ${{ inputs.version != '' && inputs.version || format('build-{0}', github.run_number) }}
           files: |
-            bin/Release/net481/aria-gui-x64.exe
-            bin/Release/net481/aria-gui-arm64.exe
+            dist/aria-gui-x64.exe
+            dist/aria-gui-arm64.exe
           generate_release_notes: true
