@@ -1,0 +1,12 @@
+# 构建产物（仓库根目录与 build 目录的 exe）
+/*.exe
+build/*.exe
+
+# 运行时产物（含用户配置/历史，不入库）
+aria2.session
+*.aria2
+config/
+
+# 工具工作区与测试运行副本
+.superpowers/
+build/e2e-speed-run/

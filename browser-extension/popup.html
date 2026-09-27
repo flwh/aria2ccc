@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { width: 380px; font: 13px/1.5 "Microsoft YaHei UI", "Segoe UI", sans-serif; color: #111827; background: #fff; }
+  header { display: flex; align-items: center; gap: 8px; padding: 10px 12px; border-bottom: 1px solid #E5E7EB; }
+  header h1 { font-size: 14px; font-weight: 600; flex: 1; }
+  .dot { width: 8px; height: 8px; border-radius: 50%; background: #9CA3AF; flex: none; }
+  .dot.on { background: #16A34A; }
+  .dot.off { background: #DC2626; }
+  #state { font-size: 12px; color: #6B7280; }
+  button { cursor: pointer; border: 1px solid #E5E7EB; background: #fff; border-radius: 6px; font: inherit; color: #111827; }
+  button:hover { background: #F9FAFB; }
+  .ghost { font-size: 12px; padding: 3px 8px; color: #6B7280; }
+  #list { max-height: 340px; overflow-y: auto; }
+  .item { display: flex; align-items: center; gap: 8px; padding: 8px 12px; border-bottom: 1px solid #F3F4F6; }
+  .item .url { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 12px; color: #374151; }
+  .item .send { font-size: 12px; padding: 3px 8px; color: #2563EB; border-color: #BFDBFE; flex: none; }
+  .item .send:hover { background: #EFF6FF; }
+  .item .del { color: #9CA3AF; border: none; padding: 2px 6px; font-size: 12px; flex: none; }
+  .empty { padding: 30px 12px; text-align: center; color: #9CA3AF; font-size: 12px; }
+  footer { padding: 10px 12px; border-top: 1px solid #E5E7EB; }
+  #sendAll { width: 100%; background: #2563EB; border-color: #2563EB; color: #fff; padding: 8px 0; font-weight: 600; }
+  #sendAll:hover { background: #1D4ED8; }
+  #sendAll:disabled { background: #BFDBFE; border-color: #BFDBFE; cursor: default; }
+  #tip { font-size: 12px; min-height: 18px; padding: 6px 12px 0; color: #16A34A; }
+  #tip.err { color: #DC2626; }
+  .hint { display: none; padding: 8px 12px; font-size: 12px; color: #B45309; background: #FFFBEB; border-bottom: 1px solid #FDE68A; }
+</style>
+</head>
+<body>
+  <header>
+    <span id="dot" class="dot"></span>
+    <h1>Aria 嗅探</h1>
+    <span id="state">检测中…</span>
+    <button id="clear" class="ghost" title="清空本页列表">清空</button>
+  </header>
+  <div id="hint" class="hint">未连接 aria-gui：请先启动下载器，再重开此面板。</div>
+  <div id="list"></div>
+  <footer>
+    <button id="sendAll" disabled>全部发送到 Aria</button>
+    <div id="tip"></div>
+  </footer>
+  <script src="popup.js"></script>
+</body>
+</html>

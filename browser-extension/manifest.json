@@ -1,0 +1,26 @@
+{
+  "manifest_version": 3,
+  "name": "Aria 下载器嗅探",
+  "version": "1.0.0",
+  "description": "嗅探页面媒体与下载直链，一键发送到 Aria 下载器（需 aria-gui 正在运行）。",
+  "minimum_chrome_version": "102",
+  "permissions": ["webRequest", "tabs", "storage"],
+  "host_permissions": ["http://*/*", "https://*/*"],
+  "background": { "service_worker": "background.js" },
+  "action": {
+    "default_title": "Aria 嗅探",
+    "default_popup": "popup.html",
+    "default_icon": {
+      "16": "icons/icon16.png",
+      "32": "icons/icon32.png",
+      "48": "icons/icon48.png",
+      "128": "icons/icon128.png"
+    }
+  },
+  "icons": {
+    "16": "icons/icon16.png",
+    "32": "icons/icon32.png",
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
+  }
+}
