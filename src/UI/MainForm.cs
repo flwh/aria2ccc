@@ -162,7 +162,7 @@ namespace AriaGui.UI
             _statusLeft.Location = new Point(24, 11);
             status.Controls.Add(_statusLeft);
 
-            // NAT 映射检测：位于引擎状态左侧，后台线程探测 stun.miwifi.com（UDP 阻塞不卡 UI）
+            // NAT 类型检测：位于引擎状态左侧，后台线程探测 stun.miwifi.com（UDP 阻塞不卡 UI）
             _natText = new Label();
             _natText.Text = "NAT 检测中…";
             _natText.Font = Theme.SmallFont;
@@ -243,18 +243,25 @@ namespace AriaGui.UI
             base.OnFormClosed(e);
         }
 
-        /// 后台探测 NAT 映射地址并更新状态栏（UDP 阻塞放后台线程，完成后回 UI 线程重排）。
+        /// 后台探测 NAT 类型并更新状态栏（UDP 阻塞放后台线程，完成后回 UI 线程重排）。
         private void StartNatCheck(Panel status)
         {
             System.Threading.Thread t = new System.Threading.Thread(delegate()
             {
-                string addr = StunCheck.Detect();
+                string text;
+                switch (StunCheck.DetectType())
+                {
+                    case NatType.Open: text = "NAT 公网直连"; break;
+                    case NatType.Cone: text = "NAT 锥形"; break;
+                    case NatType.Symmetric: text = "NAT 对称型"; break;
+                    default: text = "NAT 检测失败"; break;
+                }
                 try
                 {
                     BeginInvoke((MethodInvoker)delegate()
                     {
                         if (IsDisposed) return;
-                        _natText.Text = addr != null ? "NAT " + addr : "NAT 检测失败";
+                        _natText.Text = text;
                         LayoutStatusRight(status, _statusSpeed, _natText, _engineDot, _engineText);
                     });
                 }
