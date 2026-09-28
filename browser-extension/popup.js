@@ -11,6 +11,8 @@ const $list = document.getElementById('list');
 const $sendAll = document.getElementById('sendAll');
 const $clear = document.getElementById('clear');
 const $tip = document.getElementById('tip');
+const $manual = document.getElementById('manual');
+const $push = document.getElementById('push');
 
 async function fetchTimeout(url, opts, ms) {
   const ctl = new AbortController();
@@ -132,6 +134,39 @@ async function sendAll() {
   }
 }
 
+// 手动输入解析：按行提取受支持地址并去重（规则与服务端 ParseUrls 一致）
+function parseInput(text) {
+  const out = [];
+  const seen = new Set();
+  for (const line of String(text || '').split(/\r?\n/)) {
+    const u = line.trim();
+    if (!u) continue;
+    if (!/^(https?|ftp):\/\//i.test(u) && !/^magnet:/i.test(u)) continue;
+    if (seen.has(u)) continue;
+    seen.add(u);
+    out.push(u);
+  }
+  return out;
+}
+
+// 手动推送输入框内的地址（不涉及本页嗅探列表）
+async function pushManual() {
+  const urls = parseInput($manual.value);
+  if (!urls.length) {
+    setTip('请输入有效地址（http / https / ftp / magnet）', true);
+    return;
+  }
+  setTip('');
+  try {
+    const j = await post(urls);
+    $manual.value = '';
+    setTip('已推送 ' + (j.count || urls.length) + ' 条到 Aria');
+  } catch (e) {
+    setTip('推送失败：' + ((await checkConn()) ? 'aria-gui 未响应' : 'aria-gui 未运行'), true);
+    setConn(await checkConn());
+  }
+}
+
 async function removeLocal(url) {
   await chrome.runtime.sendMessage({ type: 'remove', tabId, url });
   const row = $list.querySelector('.item[data-url="' + CSS.escape(url) + '"]');
@@ -163,5 +198,12 @@ async function init() {
 
 $sendAll.addEventListener('click', sendAll);
 $clear.addEventListener('click', clearAll);
+$push.addEventListener('click', pushManual);
+$manual.addEventListener('keydown', (e) => {
+  if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
+    e.preventDefault();
+    pushManual();
+  }
+});
 
 init();

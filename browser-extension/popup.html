@@ -22,6 +22,11 @@
   .item .del { color: #9CA3AF; border: none; padding: 2px 6px; font-size: 12px; flex: none; }
   .empty { padding: 30px 12px; text-align: center; color: #9CA3AF; font-size: 12px; }
   footer { padding: 10px 12px; border-top: 1px solid #E5E7EB; }
+  .manual { display: flex; gap: 8px; margin-bottom: 8px; }
+  .manual textarea { flex: 1; resize: none; border: 1px solid #D1D5DB; border-radius: 6px; padding: 5px 8px; font: inherit; line-height: 1.4; color: #111827; }
+  .manual textarea:focus { outline: none; border-color: #2563EB; }
+  .manual #push { flex: none; padding: 0 14px; background: #2563EB; border-color: #2563EB; color: #fff; font-weight: 600; }
+  .manual #push:hover { background: #1D4ED8; }
   #sendAll { width: 100%; background: #2563EB; border-color: #2563EB; color: #fff; padding: 8px 0; font-weight: 600; }
   #sendAll:hover { background: #1D4ED8; }
   #sendAll:disabled { background: #BFDBFE; border-color: #BFDBFE; cursor: default; }
@@ -40,6 +45,10 @@
   <div id="hint" class="hint">未连接 aria-gui：请先启动下载器，再重开此面板。</div>
   <div id="list"></div>
   <footer>
+    <div class="manual">
+      <textarea id="manual" rows="2" placeholder="手动推送：粘贴链接，每行一条（支持 http/https/ftp/magnet）"></textarea>
+      <button id="push" title="发送输入框内的地址（Ctrl+Enter）">推送</button>
+    </div>
     <button id="sendAll" disabled>全部发送到 Aria</button>
     <div id="tip"></div>
   </footer>
