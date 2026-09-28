@@ -282,6 +282,98 @@ namespace AriaGui.UI
         }
     }
 
+    /// 窗口控制按钮（最小化/最大化/关闭）：34x34 小圆角，与标题栏加号同一圆角语言；
+    /// 悬停显示圆角高亮块（关闭键红底白图标），点击经 Click 事件。
+    internal sealed class WindowButton : Control
+    {
+        private readonly bool _closeStyle;
+        private bool _hover;
+        private bool _down;
+        private Region _round;   // 圆角裁剪区（圆角外不显示本控件像素）
+
+        public WindowButton(string glyph, bool closeStyle)
+        {
+            SetStyle(ControlStyles.AllPaintingInWmPaint | ControlStyles.UserPaint
+                | ControlStyles.OptimizedDoubleBuffer | ControlStyles.ResizeRedraw
+                | ControlStyles.StandardClick, true);
+            BackColor = Color.White;
+            _closeStyle = closeStyle;
+            Cursor = Cursors.Hand;
+            TabStop = false;
+            Font = new Font(Theme.IconFont.FontFamily, 10f);
+            Size = new Size(34, 34);
+            Text = glyph;
+        }
+
+        protected override void OnTextChanged(EventArgs e)
+        {
+            base.OnTextChanged(e);
+            Invalidate();   // 字形切换（最大化⇄还原）立即重绘
+        }
+
+        protected override void OnResize(EventArgs e)
+        {
+            base.OnResize(e);
+            UpdateRound();
+        }
+
+        /// 控件裁剪为小圆角，与 FlatButton 一致。
+        private void UpdateRound()
+        {
+            if (_round != null)
+            {
+                if (Region == _round) Region = null;
+                _round.Dispose();
+                _round = null;
+            }
+            if (Width < 2 || Height < 2) return;
+            _round = new Region(Theme.RoundRect(new Rectangle(0, 0, Width, Height), Theme.RadiusButton));
+            Region = _round;
+        }
+
+        protected override void OnMouseEnter(EventArgs e)
+        {
+            base.OnMouseEnter(e);
+            _hover = true;
+            Invalidate();
+        }
+
+        protected override void OnMouseLeave(EventArgs e)
+        {
+            base.OnMouseLeave(e);
+            _hover = false;
+            _down = false;
+            Invalidate();
+        }
+
+        protected override void OnMouseDown(MouseEventArgs e)
+        {
+            base.OnMouseDown(e);
+            _down = true;
+            Invalidate();
+        }
+
+        protected override void OnMouseUp(MouseEventArgs e)
+        {
+            base.OnMouseUp(e);
+            _down = false;
+            Invalidate();
+        }
+
+        protected override void OnPaint(PaintEventArgs e)
+        {
+            Graphics g = e.Graphics;
+            g.SmoothingMode = SmoothingMode.AntiAlias;
+            Color fill = Color.White;
+            if (_hover) fill = _closeStyle ? Color.FromArgb(232, 17, 35) : Color.FromArgb(233, 233, 233);
+            if (_down) fill = _closeStyle ? Color.FromArgb(241, 112, 122) : Color.FromArgb(221, 221, 221);
+            g.Clear(fill);
+            Color fg = (_closeStyle && (_hover || _down)) ? Color.White : Theme.TextPrimary;
+            TextRenderer.DrawText(g, Text, Font, new Rectangle(0, 0, Width, Height), fg,
+                TextFormatFlags.HorizontalCenter | TextFormatFlags.VerticalCenter | TextFormatFlags.NoPrefix);
+        }
+    }
+
     /// 扁平圆角进度条（自绘，替代原生 ProgressBar 以统一配色）。
     internal sealed class FlatProgressBar : Control
     {

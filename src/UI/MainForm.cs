@@ -31,9 +31,9 @@ namespace AriaGui.UI
         private readonly Label _engineText;
         private readonly Timer _timer;
         private readonly FlatButton _addBtn;
-        private readonly Button _minBtn;
-        private readonly Button _maxBtn;
-        private readonly Button _closeBtn;
+        private readonly WindowButton _minBtn;
+        private readonly WindowButton _maxBtn;
+        private readonly WindowButton _closeBtn;
 
         private DateTime _notifyAt = DateTime.MinValue;
 
@@ -122,12 +122,12 @@ namespace AriaGui.UI
             _addBtn.Click += delegate { ShowAddDialog(); };
             header.Controls.Add(_addBtn);
 
-            // 无边框窗口控制按钮：最小化 / 最大化(还原) / 关闭
-            _minBtn = MakeWindowButton("\uE921", false);
+            // 无边框窗口控制按钮：最小化 / 最大化(还原) / 关闭（34x34 小圆角，与加号同一风格）
+            _minBtn = new WindowButton("\uE921", false);
             _minBtn.Click += delegate { WindowState = FormWindowState.Minimized; };
-            _maxBtn = MakeWindowButton("\uE922", false);
+            _maxBtn = new WindowButton("\uE922", false);
             _maxBtn.Click += delegate { ToggleMaximize(); };
-            _closeBtn = MakeWindowButton("\uE8BB", true);
+            _closeBtn = new WindowButton("\uE8BB", true);
             _closeBtn.Click += delegate { Close(); };
             header.Controls.Add(_minBtn);
             header.Controls.Add(_maxBtn);
@@ -526,41 +526,12 @@ namespace AriaGui.UI
             _maxBtn.Text = WindowState == FormWindowState.Maximized ? "\uE923" : "\uE922";
         }
 
-        /// 窗口控制按钮：图标字体扁平按钮；关闭键悬停红底白字。
-        private static Button MakeWindowButton(string glyph, bool closeStyle)
-        {
-            Button b = new Button();
-            b.Text = glyph;
-            b.Font = new Font(Theme.IconFont.FontFamily, 10f);
-            b.FlatStyle = FlatStyle.Flat;
-            b.FlatAppearance.BorderSize = 0;
-            b.BackColor = Color.White;
-            b.ForeColor = Theme.TextPrimary;
-            b.Cursor = Cursors.Hand;
-            b.TabStop = false;
-            b.UseVisualStyleBackColor = false;
-            b.SetBounds(0, 0, 46, 32);
-            if (closeStyle)
-            {
-                b.FlatAppearance.MouseOverBackColor = Color.FromArgb(232, 17, 35);
-                b.FlatAppearance.MouseDownBackColor = Color.FromArgb(241, 112, 122);
-                b.MouseEnter += delegate { b.ForeColor = Color.White; };
-                b.MouseLeave += delegate { b.ForeColor = Theme.TextPrimary; };
-            }
-            else
-            {
-                b.FlatAppearance.MouseOverBackColor = Color.FromArgb(233, 233, 233);
-                b.FlatAppearance.MouseDownBackColor = Color.FromArgb(221, 221, 221);
-            }
-            return b;
-        }
-
         /// 头部右侧按钮布局（宽度变化时重算，避免 Anchor 在加入父容器前计算的偏移问题）。
-        private static void LayoutHeaderButtons(Control header, Button addBtn, Button minBtn, Button maxBtn, Button closeBtn)
+        private static void LayoutHeaderButtons(Control header, Control addBtn, Control minBtn, Control maxBtn, Control closeBtn)
         {
-            closeBtn.Location = new Point(header.Width - closeBtn.Width, 0);
-            maxBtn.Location = new Point(closeBtn.Left - maxBtn.Width, 0);
-            minBtn.Location = new Point(maxBtn.Left - minBtn.Width, 0);
+            closeBtn.Location = new Point(header.Width - 16 - closeBtn.Width, 15);
+            maxBtn.Location = new Point(closeBtn.Left - 6 - maxBtn.Width, 15);
+            minBtn.Location = new Point(maxBtn.Left - 6 - minBtn.Width, 15);
             addBtn.Location = new Point(minBtn.Left - 16 - addBtn.Width, 15);
         }
 
