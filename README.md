@@ -60,6 +60,16 @@ assets/             应用图标与嵌入的 aria2c.exe
 - aria2c 版本 1.37.0，作为嵌入资源随 exe 打包，运行时释放到临时目录调用
 - 浏览器扩展为纯 JavaScript（无构建步骤），通过 `http://127.0.0.1:6866` 与下载器通信（需先启动 aria-gui）
 
+## 借鉴与致谢
+
+界面设计与实现参考了以下作品：
+
+- [qBittorrent](https://www.qbittorrent.org/)：设置页「分类网格 → 子页」的布局与交互参考其设置界面
+- Windows 设置：分类入口采用与系统一致的单色线性图标（Segoe MDL2 Assets / Segoe Fluent Icons）
+- [Tailwind CSS](https://tailwindcss.com/)：整套配色沿用其色板（主色 blue-600，辅以 gray / red / green 系列）
+- [AriaNg](https://github.com/mayswind/AriaNg)：RPC 连接方式（wss / https）与其保持互通，可直接用其界面管理任务
+- [aria2](https://aria2.github.io/)：下载引擎本体，直接使用官方 Windows 构建
+
 ## 许可证
 
 - 本项目自身代码：[MIT](LICENSE)
