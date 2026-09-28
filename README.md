@@ -10,7 +10,7 @@
 - 任务管理：开始 / 暂停 / 继续 / 删除，并发数与分片数控制、全局限速
 - 下载历史记录、Trackers 列表维护（内置常用 tracker）
 - RPC 服务开关（TLS 加密，AriaNg 等外部工具以 wss/https 连接，仅监听本机）
-- 网络代理（http / https / socks5）
+- 网络代理（http / https / socks5）、自定义 User-Agent（应对站点 UA 限制）
 - 无边框浅色主题界面，自带应用图标
 
 ## 构建

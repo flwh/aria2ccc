@@ -341,6 +341,7 @@ namespace AriaGui.Engine
             args.Add("--console-log-level=warn");
             args.Add("--dir=" + cfg.SaveDir); // AriaNg 等外部工具添加任务的默认目录
             if (!string.IsNullOrEmpty(cfg.Proxy)) args.Add("--all-proxy=" + cfg.Proxy);
+            if (!string.IsNullOrEmpty(cfg.UserAgent)) args.Add("--user-agent=" + cfg.UserAgent);
             if (!string.IsNullOrEmpty(cfg.SpeedLimit)) args.Add("--max-overall-download-limit=" + cfg.SpeedLimit);
             return args;
         }
@@ -649,7 +650,7 @@ namespace AriaGui.Engine
                 string text;
                 try
                 {
-                    text = M3u8.FetchText(current, _cfg.Proxy, out finalUrl);
+                    text = M3u8.FetchText(current, _cfg.Proxy, _cfg.UserAgent, out finalUrl);
                 }
                 catch (Exception ex)
                 {
@@ -826,6 +827,8 @@ namespace AriaGui.Engine
             if (!string.IsNullOrEmpty(cfg.SpeedLimit)) args.Add("--max-overall-download-limit=" + cfg.SpeedLimit);
             // 网络代理：对 HTTP/HTTPS/FTP/BT 全协议生效（aria2 的 --all-proxy）
             if (!string.IsNullOrEmpty(cfg.Proxy)) args.Add("--all-proxy=" + cfg.Proxy);
+            // User-Agent：部分站点校验 UA（留空时用 aria2 默认值）
+            if (!string.IsNullOrEmpty(cfg.UserAgent)) args.Add("--user-agent=" + cfg.UserAgent);
             string lower = (t.Url == null ? "" : t.Url).ToLowerInvariant();
             if (t.IsMagnet() || lower.EndsWith(".torrent"))
             {

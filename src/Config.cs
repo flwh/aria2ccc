@@ -19,6 +19,7 @@ namespace AriaGui
         public string RpcSecret = "";
         public bool SniffEnabled = true; // 默认开启：与加开关前的行为保持一致
         public string Proxy = ""; // 网络代理（http/https/socks5 地址；空 = 直连）
+        public string UserAgent = ""; // 下载 User-Agent（空 = aria2 默认；部分站点校验 UA）
 
         /// UTF-8 无 BOM 编码。
         public static readonly UTF8Encoding Utf8NoBom = new UTF8Encoding(false);
@@ -57,6 +58,7 @@ namespace AriaGui
             c.RpcSecret = "";
             c.SniffEnabled = true;
             c.Proxy = "";
+            c.UserAgent = "";
             return c;
         }
 
@@ -149,6 +151,7 @@ namespace AriaGui
             cfg.RpcSecret = root.GetString("rpc_secret", cfg.RpcSecret);
             cfg.SniffEnabled = root.GetBool("sniff_enabled", cfg.SniffEnabled);
             cfg.Proxy = root.GetString("proxy", cfg.Proxy);
+            cfg.UserAgent = root.GetString("user_agent", cfg.UserAgent);
             Clamp(cfg);
         }
 
@@ -162,6 +165,9 @@ namespace AriaGui
             if (cfg.RpcPort < 1024) cfg.RpcPort = 1024;
             if (cfg.RpcPort > 65535) cfg.RpcPort = 65535;
             if (!ValidProxy(cfg.Proxy)) cfg.Proxy = "";
+            if (cfg.UserAgent == null) cfg.UserAgent = "";
+            // UA 必须单行（拼进命令行；换行会干扰参数）
+            cfg.UserAgent = cfg.UserAgent.Replace("\r", " ").Replace("\n", " ").Trim();
         }
 
         /// 序列化为 JSON 文本（2 空格缩进）。
@@ -178,6 +184,7 @@ namespace AriaGui
             o.Set("rpc_secret", RpcSecret);
             o.Set("sniff_enabled", SniffEnabled);
             o.Set("proxy", Proxy);
+            o.Set("user_agent", UserAgent);
             return o.ToJson();
         }
 

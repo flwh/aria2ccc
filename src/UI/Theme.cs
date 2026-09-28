@@ -37,6 +37,7 @@ namespace AriaGui.UI
         public static readonly Font StatusFont = CreateFont("Microsoft YaHei UI", 8.25f, FontStyle.Bold);
         public static readonly Font PageTitleFont = CreateFont("Microsoft YaHei UI", 15f, FontStyle.Bold);
         public static readonly Font IconFont = CreateIconFont(11f);
+        public static readonly Font IconFontLarge = CreateIconFont(22f);
         public static readonly Font MonoFont = CreateFont("Consolas", 9f, FontStyle.Regular);
 
         private static Font CreateFont(string family, float size, FontStyle style)
