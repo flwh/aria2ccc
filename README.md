@@ -50,10 +50,8 @@ src/                C# 源码
   Engine/           下载引擎（Manager / Parser / M3u8 / Sniffer / Embed / DownloadTask）
   UI/               WinForms 界面（MainForm / TaskList / Dialogs / SettingsView / ...）
 browser-extension/  MV3 浏览器嗅探扩展
-tests/              测试（MiniHttpServer / MiniProxyServer / ParserTests）
 build/              构建与测试脚本、E2E 验证截图
 assets/             应用图标与嵌入的 aria2c.exe
-docs/               设计与实施文档
 ```
 
 ## 说明

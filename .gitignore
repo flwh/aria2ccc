@@ -19,5 +19,8 @@ build/e2e-speed-run/
 # 测试工程（本地保留用于测试，不入库不推送）
 tests/
 
+# 设计文档（本地保留，不入库不推送）
+docs/
+
 # IDE 目录
 .qoder/
