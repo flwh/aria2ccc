@@ -31,7 +31,6 @@ namespace AriaGui.UI
         private readonly Label _engineText;
         private readonly Timer _timer;
         private readonly FlatButton _addBtn;
-        private readonly FlatButton _openBtn;
         private readonly Button _minBtn;
         private readonly Button _maxBtn;
         private readonly Button _closeBtn;
@@ -114,16 +113,11 @@ namespace AriaGui.UI
             _pageCount.Location = new Point(140, 31);
             header.Controls.Add(_pageCount);
 
-            _openBtn = new FlatButton();
-            _openBtn.Text = "打开目录";
-            _openBtn.SetBounds(mainW - 16 - 96, 15, 96, 34);
-            Theme.StyleSecondaryButton(_openBtn);
-            _openBtn.Click += delegate { OpenSaveDir(); };
-            header.Controls.Add(_openBtn);
-
+            // 添加下载：加号图标按钮（主色圆角，位置由 LayoutHeaderButtons 重算）
             _addBtn = new FlatButton();
-            _addBtn.Text = "添加下载";
-            _addBtn.SetBounds(mainW - 16 - 96 - 8 - 110, 15, 110, 34);
+            _addBtn.Text = "\uE710";
+            _addBtn.Font = new Font(Theme.IconFont.FontFamily, 10f);
+            _addBtn.SetBounds(mainW - 16 - 34, 15, 34, 34);
             Theme.StylePrimaryButton(_addBtn);
             _addBtn.Click += delegate { ShowAddDialog(); };
             header.Controls.Add(_addBtn);
@@ -145,7 +139,7 @@ namespace AriaGui.UI
             AttachTitleDrag(_pageCount);
 
             // 手动右对齐布局：Anchor 若在加入父容器前设置会按默认尺寸计算边距，Dock 生效后偏移飞出可视区
-            header.Resize += delegate { LayoutHeaderButtons(header, _addBtn, _openBtn, _minBtn, _maxBtn, _closeBtn); };
+            header.Resize += delegate { LayoutHeaderButtons(header, _addBtn, _minBtn, _maxBtn, _closeBtn); };
 
             // 底部状态栏：左状态文字，右速度 + 引擎状态
             Panel status = new Panel();
@@ -207,6 +201,7 @@ namespace AriaGui.UI
             _sidebar = new Sidebar(appIcon);
             _sidebar.Dock = DockStyle.Left;
             _sidebar.SelectedIndexChanged += delegate { SwitchPage(); };
+            _sidebar.OpenFolderRequested += delegate { OpenSaveDir(); };
 
             // Trackers 编辑/更新后联动头部计数（仅当前页生效）
             _trackerView.CountChanged += delegate
@@ -286,9 +281,8 @@ namespace AriaGui.UI
             for (int i = 0; i < _pages.Length; i++)
                 _pages[i].Visible = i == idx;
 
-            // 添加下载/打开目录为下载页专属操作，仅下载页显示
+            // 添加下载为下载页专属操作，仅下载页显示（打开目录已移至侧边栏底部常驻）
             _addBtn.Visible = idx == 0;
-            _openBtn.Visible = idx == 0;
 
             if (idx == 0)
             {
@@ -562,13 +556,12 @@ namespace AriaGui.UI
         }
 
         /// 头部右侧按钮布局（宽度变化时重算，避免 Anchor 在加入父容器前计算的偏移问题）。
-        private static void LayoutHeaderButtons(Control header, Button addBtn, Button openBtn, Button minBtn, Button maxBtn, Button closeBtn)
+        private static void LayoutHeaderButtons(Control header, Button addBtn, Button minBtn, Button maxBtn, Button closeBtn)
         {
             closeBtn.Location = new Point(header.Width - closeBtn.Width, 0);
             maxBtn.Location = new Point(closeBtn.Left - maxBtn.Width, 0);
             minBtn.Location = new Point(maxBtn.Left - minBtn.Width, 0);
-            openBtn.Location = new Point(minBtn.Left - 16 - openBtn.Width, 15);
-            addBtn.Location = new Point(openBtn.Left - 8 - addBtn.Width, 15);
+            addBtn.Location = new Point(minBtn.Left - 16 - addBtn.Width, 15);
         }
 
         /// 状态栏右侧组布局：速度 + NAT 检测 + 引擎绿点 + 引擎文字。

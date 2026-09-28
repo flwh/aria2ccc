@@ -212,7 +212,7 @@ namespace AriaGui.UI
             SetStyle(ControlStyles.OptimizedDoubleBuffer | ControlStyles.AllPaintingInWmPaint, true);
 
             _empty = new Label();
-            _empty.Text = "暂无任务\n\n点击上方「添加下载」创建任务";
+            _empty.Text = "暂无任务\n\n点击右上角「+」创建任务";
             _empty.Font = Theme.BaseFont;
             _empty.ForeColor = Theme.TextMuted;
             _empty.TextAlign = ContentAlignment.MiddleCenter;

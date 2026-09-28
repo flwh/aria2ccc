@@ -20,6 +20,7 @@ namespace AriaGui.UI
         private readonly StringFormat _sf;
         private int _selected;
         private int _hover = -1;
+        private bool _hoverOpen;
 
         private const int BrandH = 64;
         private const int ItemH = 40;
@@ -28,6 +29,9 @@ namespace AriaGui.UI
 
         /// 选中的导航项变化（用户点击导致）。
         public event EventHandler SelectedIndexChanged;
+
+        /// 点击底部「打开目录」动作按钮。
+        public event EventHandler OpenFolderRequested;
 
         public Sidebar(Icon appIcon)
         {
@@ -70,6 +74,12 @@ namespace AriaGui.UI
             return new Rectangle(PadX, BrandH + i * (ItemH + ItemGap), Width - PadX * 2, ItemH);
         }
 
+        /// 底部「打开目录」动作按钮区域（非导航项，不参与选中）。
+        private Rectangle OpenRect
+        {
+            get { return new Rectangle(PadX, Height - 12 - ItemH, Width - PadX * 2, ItemH); }
+        }
+
         private int HitTest(Point p)
         {
             for (int i = 0; i < NavTitles.Length; i++)
@@ -83,10 +93,12 @@ namespace AriaGui.UI
         {
             base.OnMouseMove(e);
             int h = HitTest(e.Location);
-            if (h != _hover)
+            bool ho = OpenRect.Contains(e.Location);
+            if (h != _hover || ho != _hoverOpen)
             {
                 _hover = h;
-                Cursor = h >= 0 ? Cursors.Hand : Cursors.Default;
+                _hoverOpen = ho;
+                Cursor = (h >= 0 || ho) ? Cursors.Hand : Cursors.Default;
                 Invalidate();
             }
         }
@@ -94,9 +106,10 @@ namespace AriaGui.UI
         protected override void OnMouseLeave(EventArgs e)
         {
             base.OnMouseLeave(e);
-            if (_hover != -1)
+            if (_hover != -1 || _hoverOpen)
             {
                 _hover = -1;
+                _hoverOpen = false;
                 Cursor = Cursors.Default;
                 Invalidate();
             }
@@ -105,6 +118,11 @@ namespace AriaGui.UI
         protected override void OnMouseClick(MouseEventArgs e)
         {
             base.OnMouseClick(e);
+            if (OpenRect.Contains(e.Location))
+            {
+                if (OpenFolderRequested != null) OpenFolderRequested(this, EventArgs.Empty);
+                return;
+            }
             int h = HitTest(e.Location);
             if (h >= 0) SelectedIndex = h;
         }
@@ -164,6 +182,21 @@ namespace AriaGui.UI
                     g.DrawString(NavTitles[i], _itemFont, tb,
                         new RectangleF(r.X + 46, r.Y, r.Width - 58, r.Height), _sf);
             }
+
+            // 底部「打开目录」动作按钮：分隔线 + 悬停高亮，不参与选中态
+            Rectangle o = OpenRect;
+            using (Pen line = new Pen(Color.FromArgb(213, 226, 245)))
+                g.DrawLine(line, PadX, o.Top - 10, Width - PadX, o.Top - 10);
+            if (_hoverOpen)
+            {
+                using (GraphicsPath p = Theme.RoundRect(o, 8))
+                using (SolidBrush sb = new SolidBrush(Color.FromArgb(120, 255, 255, 255)))
+                    g.FillPath(sb, p);
+            }
+            using (SolidBrush ib = new SolidBrush(Color.FromArgb(107, 114, 128)))
+                g.DrawString("\uE8B7", _iconFont, ib, new RectangleF(o.X + 14, o.Y, 28, o.Height), _sf);
+            using (SolidBrush tb = new SolidBrush(Color.FromArgb(75, 85, 99)))
+                g.DrawString("打开目录", _itemFont, tb, new RectangleF(o.X + 46, o.Y, o.Width - 58, o.Height), _sf);
         }
 
         protected override void Dispose(bool disposing)

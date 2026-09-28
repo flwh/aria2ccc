@@ -40,7 +40,7 @@ GitHub Actions：推送到 GitHub 后在 Linux 环境自动编译并上传 `aria
 ## 使用
 
 1. 运行 `aria-gui.exe`（便携式：配置保存在 exe 同目录 `config\config.json`）
-2. 点击「添加下载」粘贴链接开始下载；m3u8 链接自动按流媒体处理
+2. 点击右上角「+」粘贴链接开始下载；m3u8 链接自动按流媒体处理
 3. 浏览器扩展：打开 `chrome://extensions` → 开启开发者模式 → 「加载已解压的扩展程序」→ 选择 `browser-extension` 目录
 
 ## 目录结构
