@@ -170,6 +170,7 @@ namespace AriaGui.UI
         private Color _text = Color.Black;
         private bool _hovering;
         private bool _pressing;
+        private Region _round;   // 圆角裁剪区（圆角外不显示本控件像素，杜绝黑角/残影）
 
         public FlatButton()
         {
@@ -229,6 +230,26 @@ namespace AriaGui.UI
             Invalidate();
         }
 
+        protected override void OnResize(EventArgs e)
+        {
+            base.OnResize(e);
+            UpdateRound();
+        }
+
+        /// 控件裁剪为圆角矩形：圆角外一律不显示本控件像素，防止系统层/缓冲残留露出黑角。
+        private void UpdateRound()
+        {
+            if (_round != null)
+            {
+                if (Region == _round) Region = null;
+                _round.Dispose();
+                _round = null;
+            }
+            if (Width < 2 || Height < 2) return;
+            _round = new Region(Theme.RoundRect(new Rectangle(0, 0, Width, Height), Theme.RadiusButton));
+            Region = _round;
+        }
+
         protected override void OnPaint(PaintEventArgs e)
         {
             Graphics g = e.Graphics;
@@ -239,6 +260,8 @@ namespace AriaGui.UI
                 if (_pressing) fill = _down;
                 else if (_hovering) fill = _hover;
             }
+            // 先填满整个控件区（Region 内），再画圆角：圆角弧外的缓冲残留一律被底色盖掉
+            g.Clear(fill);
             Rectangle r = new Rectangle(0, 0, Width - 1, Height - 1);
             using (GraphicsPath p = Theme.RoundRect(r, Theme.RadiusButton))
             using (SolidBrush sb = new SolidBrush(fill))
@@ -263,11 +286,32 @@ namespace AriaGui.UI
     internal sealed class FlatProgressBar : Control
     {
         private int _value;
+        private Region _round;   // 胶囊裁剪区（圆角外不显示本控件像素）
 
         public FlatProgressBar()
         {
             SetStyle(ControlStyles.AllPaintingInWmPaint | ControlStyles.UserPaint | ControlStyles.OptimizedDoubleBuffer, true);
             Height = 10;
+        }
+
+        protected override void OnResize(EventArgs e)
+        {
+            base.OnResize(e);
+            UpdateRound();
+        }
+
+        /// 控件裁剪为胶囊形（半径 = 高），圆角外不绘制。
+        private void UpdateRound()
+        {
+            if (_round != null)
+            {
+                if (Region == _round) Region = null;
+                _round.Dispose();
+                _round = null;
+            }
+            if (Width < 2 || Height < 2) return;
+            _round = new Region(Theme.RoundRect(new Rectangle(0, 0, Width, Height), Height));
+            Region = _round;
         }
 
         public int Value
@@ -291,6 +335,7 @@ namespace AriaGui.UI
             int w = Width;
             int h = Height;
             if (w <= 2 || h <= 2) return;
+            g.Clear(Theme.TrackBg);   // 先铺满整个控件区，再画胶囊（消除弧外残留）
 
             using (GraphicsPath bg = Theme.RoundRect(new Rectangle(0, 0, w, h), h))
             using (SolidBrush bgb = new SolidBrush(Theme.TrackBg))
