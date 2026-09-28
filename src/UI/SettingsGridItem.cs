@@ -5,19 +5,20 @@ using System.Windows.Forms;
 
 namespace AriaGui.UI
 {
-    /// 设置页分类入口（网格项）：彩色圆角图标 + 分类名 + 说明；hover 高亮，整块可点击。
+    /// 设置页分类入口（网格项）：单色线性图标（Win10 风格，与侧边栏同色）+ 分类名 + 说明；hover 高亮，整块可点击。
     internal sealed class SettingsGridItem : Control
     {
         private readonly string _glyph;
-        private readonly Color _color;
         private readonly string _title;
         private readonly string _desc;
         private bool _hover;
 
-        public SettingsGridItem(string glyph, Color color, string title, string desc)
+        /// 图标统一色（与侧边栏未选中项一致，保持全局灰阶线性风格）。
+        private static readonly Color IconColor = Color.FromArgb(107, 114, 128);
+
+        public SettingsGridItem(string glyph, string title, string desc)
         {
             _glyph = glyph;
-            _color = color;
             _title = title;
             _desc = desc;
             BackColor = Theme.WindowBg;
@@ -54,15 +55,12 @@ namespace AriaGui.UI
                     g.FillPath(hb, hp);
             }
 
-            // 彩色圆角图标块 + 白色字形居中
-            using (GraphicsPath ip = Theme.RoundRect(new Rectangle(2, 2, 46, 46), 14))
-            using (SolidBrush ib = new SolidBrush(_color))
-                g.FillPath(ib, ip);
+            // Win10 风格：无彩色底块，统一灰色线性图标
             using (StringFormat sf = new StringFormat())
             {
                 sf.Alignment = StringAlignment.Center;
                 sf.LineAlignment = StringAlignment.Center;
-                using (SolidBrush gb = new SolidBrush(Color.White))
+                using (SolidBrush gb = new SolidBrush(IconColor))
                     g.DrawString(_glyph, Theme.IconFontLarge, gb, new RectangleF(2, 2, 46, 46), sf);
             }
 

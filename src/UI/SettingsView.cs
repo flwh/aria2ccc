@@ -224,9 +224,6 @@ namespace AriaGui.UI
             _gridPage.BackColor = Theme.WindowBg;
 
             string[] glyphs = new string[] { "\uE713", "\uE896", "\uE774", "\uE943", "\uE8A7", "\uE946" };
-            Color[] colors = new Color[] {
-                Color.FromArgb(124, 58, 237), Color.FromArgb(239, 68, 68), Color.FromArgb(245, 158, 11),
-                Theme.Primary, Theme.Success, Color.FromArgb(234, 179, 8) };
             string[] titles = new string[] { "通用", "下载", "网络", "RPC", "扩展", "关于" };
             string[] descs = new string[] {
                 "默认保存目录", "并发下载、分片与限速", "代理与 User-Agent",
@@ -235,7 +232,7 @@ namespace AriaGui.UI
             for (int i = 0; i < _items.Length; i++)
             {
                 int idx = i; // C# 5 闭包：捕获副本
-                SettingsGridItem it = new SettingsGridItem(glyphs[i], colors[i], titles[i], descs[i]);
+                SettingsGridItem it = new SettingsGridItem(glyphs[i], titles[i], descs[i]);
                 it.Click += delegate { ShowSub(idx); };
                 _items[i] = it;
                 _gridPage.Controls.Add(it);
