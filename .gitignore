@@ -16,5 +16,8 @@ config/
 .superpowers/
 build/e2e-speed-run/
 
+# 测试工程（本地保留用于测试，不入库不推送）
+tests/
+
 # IDE 目录
 .qoder/
