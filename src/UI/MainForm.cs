@@ -26,6 +26,9 @@ namespace AriaGui.UI
         private readonly Label _pageCount;
         private readonly Label _statusLeft;
         private readonly Label _statusSpeed;
+        private readonly Label _natText;
+        private readonly Label _engineDot;
+        private readonly Label _engineText;
         private readonly Timer _timer;
         private readonly FlatButton _addBtn;
         private readonly FlatButton _openBtn;
@@ -159,21 +162,30 @@ namespace AriaGui.UI
             _statusLeft.Location = new Point(24, 11);
             status.Controls.Add(_statusLeft);
 
-            Label engineDot = new Label();
-            engineDot.Text = "●";
-            engineDot.Font = Theme.SmallFont;
-            engineDot.ForeColor = Theme.Success;
-            engineDot.AutoSize = true;
-            engineDot.Location = new Point(mainW - 16 - 50 - 16, 10);
-            status.Controls.Add(engineDot);
+            // NAT 映射检测：位于引擎状态左侧，后台线程探测 stun.miwifi.com（UDP 阻塞不卡 UI）
+            _natText = new Label();
+            _natText.Text = "NAT 检测中…";
+            _natText.Font = Theme.SmallFont;
+            _natText.ForeColor = Theme.TextSecondary;
+            _natText.AutoSize = true;
+            _natText.Location = new Point(mainW - 16 - 50 - 16 - 12 - 90 - 12 - 96, 11);
+            status.Controls.Add(_natText);
 
-            Label engineText = new Label();
-            engineText.Text = "引擎就绪";
-            engineText.Font = Theme.SmallFont;
-            engineText.ForeColor = Theme.TextSecondary;
-            engineText.AutoSize = true;
-            engineText.Location = new Point(mainW - 16 - 50, 11);
-            status.Controls.Add(engineText);
+            _engineDot = new Label();
+            _engineDot.Text = "●";
+            _engineDot.Font = Theme.SmallFont;
+            _engineDot.ForeColor = Theme.Success;
+            _engineDot.AutoSize = true;
+            _engineDot.Location = new Point(mainW - 16 - 50 - 16, 10);
+            status.Controls.Add(_engineDot);
+
+            _engineText = new Label();
+            _engineText.Text = "引擎就绪";
+            _engineText.Font = Theme.SmallFont;
+            _engineText.ForeColor = Theme.TextSecondary;
+            _engineText.AutoSize = true;
+            _engineText.Location = new Point(mainW - 16 - 50, 11);
+            status.Controls.Add(_engineText);
 
             _statusSpeed = new Label();
             _statusSpeed.Text = "↓ 0 B/s";
@@ -183,7 +195,7 @@ namespace AriaGui.UI
             _statusSpeed.Location = new Point(mainW - 16 - 50 - 16 - 12 - 90, 11);
             status.Controls.Add(_statusSpeed);
 
-            status.Resize += delegate { LayoutStatusRight(status, _statusSpeed, engineDot, engineText); };
+            status.Resize += delegate { LayoutStatusRight(status, _statusSpeed, _natText, _engineDot, _engineText); };
 
             // 组装：内容(Fill 先加) → 状态栏(Bottom) → 头部(Top) → 外壳对 → 侧边栏
             Panel shell = new Panel();
@@ -216,13 +228,11 @@ namespace AriaGui.UI
             _timer.Tick += delegate { OnTick(); };
             _timer.Start();
 
-            // 状态栏补引擎版本号（查询失败保持「引擎就绪」；文字变宽需重排右侧组）
+            // 状态栏补引擎版本号（查询失败保持「引擎就绪」）；NAT 检测异步完成后同样重排
             string aria2Ver = _mgr.Aria2Version;
-            if (aria2Ver != "")
-            {
-                engineText.Text = "引擎就绪 · aria2 " + aria2Ver;
-                LayoutStatusRight(status, _statusSpeed, engineDot, engineText);
-            }
+            if (aria2Ver != "") _engineText.Text = "引擎就绪 · aria2 " + aria2Ver;
+            LayoutStatusRight(status, _statusSpeed, _natText, _engineDot, _engineText);
+            StartNatCheck(status);
         }
 
         protected override void OnFormClosed(FormClosedEventArgs e)
@@ -231,6 +241,28 @@ namespace AriaGui.UI
             // 退订 Manager 事件（不强杀 aria2c 子进程）
             _taskList.Detach();
             base.OnFormClosed(e);
+        }
+
+        /// 后台探测 NAT 映射地址并更新状态栏（UDP 阻塞放后台线程，完成后回 UI 线程重排）。
+        private void StartNatCheck(Panel status)
+        {
+            System.Threading.Thread t = new System.Threading.Thread(delegate()
+            {
+                string addr = StunCheck.Detect();
+                try
+                {
+                    BeginInvoke((MethodInvoker)delegate()
+                    {
+                        if (IsDisposed) return;
+                        _natText.Text = addr != null ? "NAT " + addr : "NAT 检测失败";
+                        LayoutStatusRight(status, _statusSpeed, _natText, _engineDot, _engineText);
+                    });
+                }
+                catch { } // 窗口已关闭时忽略
+            });
+            t.IsBackground = true;
+            t.Name = "nat-check";
+            t.Start();
         }
 
         /// 在状态栏显示一条应用内通知（5 秒内不被定时刷新覆盖）。
@@ -532,12 +564,13 @@ namespace AriaGui.UI
             addBtn.Location = new Point(openBtn.Left - 8 - addBtn.Width, 15);
         }
 
-        /// 状态栏右侧组布局：速度 + 引擎绿点 + 引擎文字。
-        private static void LayoutStatusRight(Control status, Label speed, Label dot, Label engineText)
+        /// 状态栏右侧组布局：速度 + NAT 检测 + 引擎绿点 + 引擎文字。
+        private static void LayoutStatusRight(Control status, Label speed, Label nat, Label dot, Label engineText)
         {
             engineText.Location = new Point(status.Width - 16 - engineText.Width, 11);
             dot.Location = new Point(engineText.Left - 6 - dot.Width, 10);
-            speed.Location = new Point(dot.Left - 12 - speed.Width, 11);
+            nat.Location = new Point(dot.Left - 12 - nat.Width, 11);
+            speed.Location = new Point(nat.Left - 12 - speed.Width, 11);
         }
 
         /// 头部底边线。
