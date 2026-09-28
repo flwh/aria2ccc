@@ -135,7 +135,7 @@ namespace AriaGui.UI
             Win32.SetPlaceholder(_rpcSecretBox, "可空，如 mysecret");
 
             Label rpcHint = new Label();
-            rpcHint.Text = "应用启动后常驻提供端口（仅监听本机）；保存后立即生效。";
+            rpcHint.Text = "加密端口 HTTPS/WSS 常驻（仅本机）；AriaNg 选 wss；首次用前需在浏览器接受证书。";
             rpcHint.SetBounds(24, 334, 512, 16);
             rpcHint.Font = Theme.SmallFont;
             rpcHint.ForeColor = Theme.TextMuted;

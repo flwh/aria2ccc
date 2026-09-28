@@ -261,18 +261,29 @@ namespace AriaGui.Engine
             }
         }
 
-        /// 启动（或重启）常驻 RPC 实例：应用运行期间持续监听配置端口，与下载任务解耦；
-        /// 返回 null=成功，否则为错误提示。失败不抛异常（仅提示，不影响主功能）。
+        /// 启动（或重启）常驻 RPC 实例：应用运行期间持续监听配置端口（TLS 加密），与下载任务解耦；
+        /// 返回 null=成功，否则为提示/错误。失败不抛异常（仅提示，不影响主功能）。
         public string StartRpcHost()
         {
             StopRpcHost();
             if (!_cfg.RpcEnabled) return null;
+            string certPath = null;
+            string warn = null;
+            try
+            {
+                certPath = RpcCert.Ensure(Config.DataDir());
+            }
+            catch (Exception ex)
+            {
+                certPath = null; // 降级为非加密 RPC，保持可用
+                warn = "RPC 加密证书生成失败，已降级为非加密模式：" + ex.Message;
+            }
             try
             {
                 Process p = new Process();
                 ProcessStartInfo psi = new ProcessStartInfo();
                 psi.FileName = _bin;
-                psi.Arguments = JoinArgs(BuildRpcArgs(_cfg));
+                psi.Arguments = JoinArgs(BuildRpcArgs(_cfg, certPath));
                 psi.UseShellExecute = false;
                 psi.CreateNoWindow = true;
                 psi.RedirectStandardOutput = true;
@@ -290,9 +301,9 @@ namespace AriaGui.Engine
                 {
                     lock (_mu) { _rpcHost = null; }
                     p.Dispose();
-                    return "RPC 服务启动失败（端口 " + _cfg.RpcPort.ToString(CultureInfo.InvariantCulture) + " 可能被占用）";
+                    return "RPC 服务启动失败（端口 " + _cfg.RpcPort.ToString(CultureInfo.InvariantCulture) + " 可能被占用，或证书加载失败）";
                 }
-                return null;
+                return warn;
             }
             catch (Exception ex)
             {
@@ -311,14 +322,21 @@ namespace AriaGui.Engine
             try { p.Dispose(); } catch { }
         }
 
-        /// 常驻 RPC 实例参数：无下载任务，仅提供 RPC 端口服务。
-        private static List<string> BuildRpcArgs(Config cfg)
+        /// 常驻 RPC 实例参数：无下载任务，仅提供 RPC 端口服务。证书就绪时启用 TLS（HTTPS/WSS）。
+        private static List<string> BuildRpcArgs(Config cfg, string certPath)
         {
             List<string> args = new List<string>();
             args.Add("--enable-rpc=true");
             args.Add("--rpc-listen-port=" + cfg.RpcPort.ToString(CultureInfo.InvariantCulture));
             args.Add("--rpc-allow-origin-all=true");
             if (!string.IsNullOrEmpty(cfg.RpcSecret)) args.Add("--rpc-secret=" + cfg.RpcSecret);
+            if (certPath != null)
+            {
+                // TLS 加密：AriaNg 等前端改用 wss/https 连接（HTTPS 页面无混合内容顾虑）。
+                // aria2 官方 Windows 构建走 wintls(Schannel)，仅接受无密码 PKCS#12、不支持 PEM，故不传 --rpc-private-key。
+                args.Add("--rpc-secure=true");
+                args.Add("--rpc-certificate=" + certPath);
+            }
             args.Add("--no-conf");
             args.Add("--console-log-level=warn");
             args.Add("--dir=" + cfg.SaveDir); // AriaNg 等外部工具添加任务的默认目录
