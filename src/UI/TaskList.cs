@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Drawing;
+using System.Drawing.Drawing2D;
 using System.Globalization;
 using System.Windows.Forms;
 using AriaGui.Engine;
@@ -16,16 +17,16 @@ namespace AriaGui.UI
         private readonly Label _status;
         private readonly FlatProgressBar _bar;
         private readonly Label _info;
-        private readonly Button _startBtn;
-        private readonly Button _pauseBtn;
-        private readonly Button _removeBtn;
+        private readonly FlatButton _startBtn;
+        private readonly FlatButton _pauseBtn;
+        private readonly FlatButton _removeBtn;
 
         public string TaskId;
 
         public TaskRow(string taskId, Action<string> onStart, Action<string> onPause, Action<string> onRemove)
         {
             TaskId = taskId;
-            BackColor = Theme.CardBg;
+            BackColor = Theme.WindowBg; // 行间空隙与圆角外区域同背景，圆角卡片由 OnPaint 自绘
             SetStyle(ControlStyles.AllPaintingInWmPaint | ControlStyles.UserPaint | ControlStyles.OptimizedDoubleBuffer, true);
 
             _title = new Label();
@@ -47,17 +48,17 @@ namespace AriaGui.UI
             _info.ForeColor = Theme.TextSecondary;
             _info.BackColor = Color.Transparent;
 
-            _startBtn = new Button();
+            _startBtn = new FlatButton();
             _startBtn.Text = "开始";
             Theme.StylePrimaryButton(_startBtn);
             _startBtn.Click += delegate { onStart(TaskId); };
 
-            _pauseBtn = new Button();
+            _pauseBtn = new FlatButton();
             _pauseBtn.Text = "暂停";
             Theme.StyleSecondaryButton(_pauseBtn);
             _pauseBtn.Click += delegate { onPause(TaskId); };
 
-            _removeBtn = new Button();
+            _removeBtn = new FlatButton();
             _removeBtn.Text = "删除";
             Theme.StyleDangerGhostButton(_removeBtn);
             _removeBtn.Click += delegate { onRemove(TaskId); };
@@ -75,10 +76,18 @@ namespace AriaGui.UI
 
         protected override void OnPaint(PaintEventArgs e)
         {
-            base.OnPaint(e);
-            using (Pen p = new Pen(Theme.Border))
+            base.OnPaint(e); // 系统以 BackColor（窗口背景）铺底
+            e.Graphics.SmoothingMode = SmoothingMode.AntiAlias;
+            Rectangle r = new Rectangle(0, 0, Width - 1, Height - 1);
+            using (GraphicsPath p = Theme.RoundRect(r, Theme.RadiusCard))
+            using (SolidBrush sb = new SolidBrush(Theme.CardBg))
             {
-                e.Graphics.DrawLine(p, 0, Height - 1, Width, Height - 1);
+                e.Graphics.FillPath(sb, p);
+            }
+            using (GraphicsPath p2 = Theme.RoundRect(r, Theme.RadiusCard))
+            using (Pen pen = new Pen(Theme.Border))
+            {
+                e.Graphics.DrawPath(pen, p2);
             }
         }
 

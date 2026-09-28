@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Drawing;
+using System.Drawing.Drawing2D;
 using System.Globalization;
 using System.Windows.Forms;
 using AriaGui.Engine;
@@ -31,9 +32,10 @@ namespace AriaGui.UI
 
             _subFont = new Font(Font, FontStyle.Italic);
 
-            Button clear = new Button();
+            FlatButton clear = new FlatButton();
             clear.Text = "清空历史";
             clear.SetBounds(14, 8, 104, 30);
+            clear.BackColor = Theme.WindowBg; // 按钮位于底部浅灰条上，圆角外与之同色
             Theme.StyleDangerGhostButton(clear);
             clear.Click += delegate { OnClearClicked(); };
 
@@ -86,9 +88,12 @@ namespace AriaGui.UI
 
             if (sel)
             {
-                e.Graphics.FillRectangle(_selBg, b);
+                e.Graphics.SmoothingMode = SmoothingMode.AntiAlias;
+                Rectangle rb = new Rectangle(b.X + 2, b.Y + 2, b.Width - 4, b.Height - 4);
+                using (GraphicsPath p = Theme.RoundRect(rb, 6))
+                    e.Graphics.FillPath(_selBg, p);
                 using (SolidBrush accent = new SolidBrush(Theme.Primary))
-                    e.Graphics.FillRectangle(accent, new Rectangle(b.X, b.Y, 3, b.Height));
+                    e.Graphics.FillRectangle(accent, new Rectangle(rb.X, rb.Y, 3, rb.Height));
             }
             else
             {

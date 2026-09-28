@@ -30,7 +30,7 @@ namespace AriaGui.UI
             BackColor = Theme.WindowBg;
 
             Panel card = new Panel();
-            card.BackColor = Theme.CardBg;
+            card.BackColor = Theme.WindowBg; // 圆角卡片外区域与父背景同色，卡片本体由 CardPaint 自绘
             card.SetBounds(14, 14, 560, 476);
             card.Paint += Theme.CardPaint;
 
@@ -44,7 +44,7 @@ namespace AriaGui.UI
             _dirBox.Text = cfg.SaveDir;
             Theme.StyleTextBox(_dirBox);
 
-            Button browse = new Button();
+            FlatButton browse = new FlatButton();
             browse.Text = "浏览…";
             browse.SetBounds(444, 27, 84, 28);
             Theme.StyleSecondaryButton(browse);
@@ -157,7 +157,7 @@ namespace AriaGui.UI
             sniffHint.Font = Theme.SmallFont;
             sniffHint.ForeColor = Theme.TextMuted;
 
-            Button save = new Button();
+            FlatButton save = new FlatButton();
             save.Text = "保存设置";
             save.SetBounds(24, 428, 104, 32);
             Theme.StylePrimaryButton(save);

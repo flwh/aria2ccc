@@ -15,3 +15,6 @@ config/
 # 工具工作区与测试运行副本
 .superpowers/
 build/e2e-speed-run/
+
+# IDE 目录
+.qoder/

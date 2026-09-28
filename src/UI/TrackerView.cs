@@ -17,7 +17,7 @@ namespace AriaGui.UI
 
         private readonly TextBox _box;
         private readonly Label _countLabel;
-        private readonly Button _fetchBtn;
+        private readonly FlatButton _fetchBtn;
         private bool _fetching;
 
         private const string FetchText = "从网络更新";
@@ -33,7 +33,7 @@ namespace AriaGui.UI
             BackColor = Theme.WindowBg;
 
             Panel card = new Panel();
-            card.BackColor = Theme.CardBg;
+            card.BackColor = Theme.WindowBg; // 圆角卡片外区域与父背景同色，卡片本体由 CardPaint 自绘
             card.SetBounds(14, 14, 600, 468);
             card.Paint += Theme.CardPaint;
 
@@ -67,19 +67,19 @@ namespace AriaGui.UI
 
             _box.TextChanged += delegate { UpdateCount(); };
 
-            Button save = new Button();
+            FlatButton save = new FlatButton();
             save.Text = "保存";
             save.SetBounds(24, 410, 88, 32);
             Theme.StylePrimaryButton(save);
             save.Click += delegate { SaveTrackers(); };
 
-            Button reset = new Button();
+            FlatButton reset = new FlatButton();
             reset.Text = "恢复默认";
             reset.SetBounds(120, 410, 96, 32);
             Theme.StyleSecondaryButton(reset);
             reset.Click += delegate { RestoreDefault(); };
 
-            _fetchBtn = new Button();
+            _fetchBtn = new FlatButton();
             _fetchBtn.Text = FetchText;
             _fetchBtn.SetBounds(224, 410, 112, 32);
             Theme.StyleSecondaryButton(_fetchBtn);

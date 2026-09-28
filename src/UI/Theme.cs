@@ -24,6 +24,12 @@ namespace AriaGui.UI
         public static readonly Color TextPrimary = Color.FromArgb(17, 24, 39);
         public static readonly Color TextSecondary = Color.FromArgb(107, 114, 128);
         public static readonly Color TextMuted = Color.FromArgb(156, 163, 175);
+        public static readonly Color DangerPressed = Color.FromArgb(254, 226, 226);
+
+        /// 小圆角半径：卡片 / 按钮 / 输入框（统一的小圆角观感）。
+        public const int RadiusCard = 8;
+        public const int RadiusButton = 6;
+        public const int RadiusInput = 6;
 
         public static readonly Font BaseFont = CreateFont("Microsoft YaHei UI", 9f, FontStyle.Regular);
         public static readonly Font SmallFont = CreateFont("Microsoft YaHei UI", 8.25f, FontStyle.Regular);
@@ -79,41 +85,22 @@ namespace AriaGui.UI
             }
         }
 
-        /// 主按钮：蓝底白字扁平。
-        public static void StylePrimaryButton(Button b)
+        /// 主按钮：蓝底白字扁平圆角。
+        public static void StylePrimaryButton(FlatButton b)
         {
-            b.FlatStyle = FlatStyle.Flat;
-            b.FlatAppearance.BorderSize = 0;
-            b.FlatAppearance.MouseOverBackColor = PrimaryHover;
-            b.FlatAppearance.MouseDownBackColor = PrimaryPressed;
-            b.BackColor = Primary;
-            b.ForeColor = Color.White;
-            b.Cursor = Cursors.Hand;
-            b.Font = BaseFont;
-            b.UseVisualStyleBackColor = false;
+            b.SetPalette(Primary, PrimaryHover, PrimaryPressed, Color.Empty, Color.White);
         }
 
         /// 次按钮：白底灰边。
-        public static void StyleSecondaryButton(Button b)
+        public static void StyleSecondaryButton(FlatButton b)
         {
-            b.FlatStyle = FlatStyle.Flat;
-            b.FlatAppearance.BorderSize = 1;
-            b.FlatAppearance.BorderColor = Border;
-            b.FlatAppearance.MouseOverBackColor = HoverBg;
-            b.FlatAppearance.MouseDownBackColor = WindowBg;
-            b.BackColor = Color.White;
-            b.ForeColor = TextPrimary;
-            b.Cursor = Cursors.Hand;
-            b.Font = BaseFont;
-            b.UseVisualStyleBackColor = false;
+            b.SetPalette(Color.White, HoverBg, WindowBg, Border, TextPrimary);
         }
 
         /// 危险幽灵按钮：白底红字（用于"删除"/"清空历史"）。
-        public static void StyleDangerGhostButton(Button b)
+        public static void StyleDangerGhostButton(FlatButton b)
         {
-            StyleSecondaryButton(b);
-            b.ForeColor = Danger;
-            b.FlatAppearance.MouseOverBackColor = DangerHover;
+            b.SetPalette(Color.White, DangerHover, DangerPressed, Border, Danger);
         }
 
         /// 文本输入框基础样式（1px 边框由 ThemedTextBox 的父容器垫层代绘，见下）。
@@ -132,12 +119,18 @@ namespace AriaGui.UI
             l.Font = BaseFont;
         }
 
-        /// 卡片 1px 细边框（Panel.Paint 处理器，无第三方圆角支持的轻量替代）。
+        /// 卡片：小圆角白底 + 1px 细边框（Panel.Paint 处理器；卡片 BackColor 应设为父容器背景色）。
         public static void CardPaint(object sender, PaintEventArgs e)
         {
             Control c = (Control)sender;
-            using (Pen p = new Pen(Border))
-                e.Graphics.DrawRectangle(p, 0, 0, c.Width - 1, c.Height - 1);
+            e.Graphics.SmoothingMode = SmoothingMode.AntiAlias;
+            Rectangle r = new Rectangle(0, 0, c.Width - 1, c.Height - 1);
+            using (GraphicsPath p = RoundRect(r, RadiusCard))
+            using (SolidBrush b = new SolidBrush(CardBg))
+                e.Graphics.FillPath(b, p);
+            using (GraphicsPath p2 = RoundRect(r, RadiusCard))
+            using (Pen pen = new Pen(Border))
+                e.Graphics.DrawPath(pen, p2);
         }
 
         /// 圆角矩形路径（直径取 min(2*radius, 宽, 高)）。
@@ -163,6 +156,106 @@ namespace AriaGui.UI
                 if (!string.IsNullOrEmpty(target.Text)) dlg.SelectedPath = target.Text;
                 if (dlg.ShowDialog(owner) == DialogResult.OK) target.Text = dlg.SelectedPath;
             }
+        }
+    }
+
+    /// 扁平小圆角按钮：自绘圆角背景与居中文本（替代 FlatStyle 直角系统绘制）。
+    /// 三档配色由 StyleXxxButton 经 SetPalette 注入；窗口控制按钮不使用本类（保持直角）。
+    internal sealed class FlatButton : Button
+    {
+        private Color _fill = Color.White;
+        private Color _hover = Color.White;
+        private Color _down = Color.White;
+        private Color _border = Color.Empty;
+        private Color _text = Color.Black;
+        private bool _hovering;
+        private bool _pressing;
+
+        public FlatButton()
+        {
+            SetStyle(ControlStyles.AllPaintingInWmPaint | ControlStyles.UserPaint
+                | ControlStyles.OptimizedDoubleBuffer | ControlStyles.ResizeRedraw, true);
+            BackColor = Color.White; // 圆角外区域由系统以 BackColor 铺底（即父容器背景）
+            FlatStyle = FlatStyle.Flat;
+            FlatAppearance.BorderSize = 0;
+            UseVisualStyleBackColor = false;
+            Cursor = Cursors.Hand;
+            Font = Theme.BaseFont;
+        }
+
+        /// 注入配色：border 传 Color.Empty 表示无边框。
+        public void SetPalette(Color fill, Color hover, Color down, Color border, Color text)
+        {
+            _fill = fill;
+            _hover = hover;
+            _down = down;
+            _border = border;
+            _text = text;
+            Invalidate();
+        }
+
+        protected override void OnMouseEnter(EventArgs e)
+        {
+            base.OnMouseEnter(e);
+            _hovering = true;
+            Invalidate();
+        }
+
+        protected override void OnMouseLeave(EventArgs e)
+        {
+            base.OnMouseLeave(e);
+            _hovering = false;
+            _pressing = false;
+            Invalidate();
+        }
+
+        protected override void OnMouseDown(MouseEventArgs mevent)
+        {
+            base.OnMouseDown(mevent);
+            _pressing = true;
+            Invalidate();
+        }
+
+        protected override void OnMouseUp(MouseEventArgs mevent)
+        {
+            base.OnMouseUp(mevent);
+            _pressing = false;
+            Invalidate();
+        }
+
+        protected override void OnEnabledChanged(EventArgs e)
+        {
+            base.OnEnabledChanged(e);
+            Invalidate();
+        }
+
+        protected override void OnPaint(PaintEventArgs e)
+        {
+            Graphics g = e.Graphics;
+            g.SmoothingMode = SmoothingMode.AntiAlias;
+            Color fill = _fill;
+            if (Enabled)
+            {
+                if (_pressing) fill = _down;
+                else if (_hovering) fill = _hover;
+            }
+            Rectangle r = new Rectangle(0, 0, Width - 1, Height - 1);
+            using (GraphicsPath p = Theme.RoundRect(r, Theme.RadiusButton))
+            using (SolidBrush sb = new SolidBrush(fill))
+            {
+                g.FillPath(sb, p);
+            }
+            if (_border != Color.Empty)
+            {
+                using (GraphicsPath p2 = Theme.RoundRect(r, Theme.RadiusButton))
+                using (Pen pen = new Pen(_border))
+                {
+                    g.DrawPath(pen, p2);
+                }
+            }
+            TextRenderer.DrawText(g, Text, Font, r, Enabled ? _text : Theme.TextMuted,
+                TextFormatFlags.HorizontalCenter | TextFormatFlags.VerticalCenter
+                | TextFormatFlags.EndEllipsis | TextFormatFlags.NoPrefix);
         }
     }
 
@@ -255,6 +348,7 @@ namespace AriaGui.UI
 
         private Rectangle _frame;   // 含边框的外矩形（相对父容器）
         private Control _hooked;    // 已挂钩 Paint 的父容器
+        private Region _round;      // 控件圆角裁剪区（随尺寸重建）
 
         public ThemedTextBox()
         {
@@ -269,7 +363,22 @@ namespace AriaGui.UI
             if (height < 2) height = 2;
             _frame = new Rectangle(x, y, width, height);
             base.SetBoundsCore(x + 1, y + 1, width - 2, height - 2, specified);
+            UpdateRound();
             InvalidateFrame();
+        }
+
+        /// 控件裁剪为小圆角（内半径比边框环内缩 1px，与外框弧同心）。
+        private void UpdateRound()
+        {
+            if (_round != null)
+            {
+                if (Region == _round) Region = null;
+                _round.Dispose();
+                _round = null;
+            }
+            if (Width < 2 || Height < 2) return;
+            _round = new Region(Theme.RoundRect(new Rectangle(0, 0, Width, Height), Theme.RadiusInput - 1));
+            Region = _round;
         }
 
         protected override void OnHandleCreated(EventArgs e)
@@ -318,13 +427,20 @@ namespace AriaGui.UI
             }
         }
 
-        /// 父容器代绘 1px 边框环（内侧不填充，子窗口区域互不遮挡）。
+        /// 父容器代绘小圆角边框环：白底填充 + 1px 描边（常态浅灰 ↔ 聚焦主题蓝）。
         private void FramePaint(object sender, PaintEventArgs e)
         {
             if (_frame.Width <= 1 || _frame.Height <= 1) return;
             Color c = Focused ? Theme.Primary : Theme.InputBorder;
-            using (Pen p = new Pen(c))
-                e.Graphics.DrawRectangle(p, _frame.X, _frame.Y, _frame.Width - 1, _frame.Height - 1);
+            e.Graphics.SmoothingMode = SmoothingMode.AntiAlias;
+            Rectangle r = new Rectangle(_frame.X, _frame.Y, _frame.Width - 1, _frame.Height - 1);
+            using (GraphicsPath p = Theme.RoundRect(r, Theme.RadiusInput))
+            {
+                using (SolidBrush b = new SolidBrush(Color.White))
+                    e.Graphics.FillPath(b, p);
+                using (Pen pen = new Pen(c))
+                    e.Graphics.DrawPath(pen, p);
+            }
         }
     }
 

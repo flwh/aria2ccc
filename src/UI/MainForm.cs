@@ -27,8 +27,8 @@ namespace AriaGui.UI
         private readonly Label _statusLeft;
         private readonly Label _statusSpeed;
         private readonly Timer _timer;
-        private readonly Button _addBtn;
-        private readonly Button _openBtn;
+        private readonly FlatButton _addBtn;
+        private readonly FlatButton _openBtn;
         private readonly Button _minBtn;
         private readonly Button _maxBtn;
         private readonly Button _closeBtn;
@@ -111,14 +111,14 @@ namespace AriaGui.UI
             _pageCount.Location = new Point(140, 31);
             header.Controls.Add(_pageCount);
 
-            _openBtn = new Button();
+            _openBtn = new FlatButton();
             _openBtn.Text = "打开目录";
             _openBtn.SetBounds(mainW - 16 - 96, 15, 96, 34);
             Theme.StyleSecondaryButton(_openBtn);
             _openBtn.Click += delegate { OpenSaveDir(); };
             header.Controls.Add(_openBtn);
 
-            _addBtn = new Button();
+            _addBtn = new FlatButton();
             _addBtn.Text = "添加下载";
             _addBtn.SetBounds(mainW - 16 - 96 - 8 - 110, 15, 110, 34);
             Theme.StylePrimaryButton(_addBtn);

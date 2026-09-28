@@ -25,11 +25,11 @@ namespace AriaGui.UI
         /// 右下角按钮对：取消按钮右缘距内容右缘 18px、两按钮间距 10px、高 32；返回主操作按钮。
         protected Button AddActionPair(int top, string actionText, int actionWidth, int cancelWidth)
         {
-            Button ok = new Button();
+            FlatButton ok = new FlatButton();
             ok.Text = actionText;
             Theme.StylePrimaryButton(ok);
 
-            Button cancel = new Button();
+            FlatButton cancel = new FlatButton();
             cancel.Text = "取消";
             Theme.StyleSecondaryButton(cancel);
             cancel.DialogResult = DialogResult.Cancel;
@@ -83,7 +83,7 @@ namespace AriaGui.UI
             _dirBox.SetBounds(96, 65, 352, 23);
             _dirBox.Text = defaultDir;
 
-            Button browse = new Button();
+            FlatButton browse = new FlatButton();
             browse.Text = "浏览…";
             Theme.StyleSecondaryButton(browse);
             browse.SetBounds(456, 63, 86, 27);
