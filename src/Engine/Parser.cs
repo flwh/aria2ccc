@@ -12,6 +12,7 @@ namespace AriaGui.Engine
         public long Total;
         public double Percent;
         public long Speed;
+        public long UpSpeed;
         public int Eta;
     }
 
@@ -22,6 +23,7 @@ namespace AriaGui.Engine
         private static readonly Regex SizePairRe = new Regex(@"^([\d.]+[KMGT]?i?B)/(?:([\d.]+[KMGT]?i?B)|\?\?|--)");
         private static readonly Regex PercentRe = new Regex(@"\((\d+)%\)");
         private static readonly Regex SpeedRe = new Regex(@"(?:DL|SPD):([\d.]+[KMGT]?i?B)(?:/s)?");
+        private static readonly Regex UpSpeedRe = new Regex(@"(?:UL|UP):([\d.]+[KMGT]?i?B)");
         private static readonly Regex EtaRe = new Regex(@"ETA:(\S+)");
         private static readonly Regex EtaPartsRe = new Regex(@"(\d+)([dhms])");
 
@@ -71,6 +73,13 @@ namespace AriaGui.Engine
             {
                 long v;
                 if (TryParseSize(dm.Groups[1].Value, out v)) update.Speed = v;
+            }
+
+            Match um = UpSpeedRe.Match(rest);
+            if (um.Success)
+            {
+                long v;
+                if (TryParseSize(um.Groups[1].Value, out v)) update.UpSpeed = v;
             }
 
             update.Eta = -1;

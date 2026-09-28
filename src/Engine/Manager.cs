@@ -247,6 +247,20 @@ namespace AriaGui.Engine
             }
         }
 
+        /// 当前所有运行中任务的合计上传速度（状态栏「↑」展示；m3u8 分片不参与）。
+        public long TotalUpSpeed()
+        {
+            lock (_mu)
+            {
+                long sum = 0;
+                foreach (DownloadTask t in _tasks.Values)
+                {
+                    if (t.Status == TaskStatus.Running && !t.IsPlaylist) sum += t.UpSpeed;
+                }
+                return sum;
+            }
+        }
+
         // ---- 内部实现 ----
 
         private static DownloadTask Clone(DownloadTask t)
@@ -260,6 +274,7 @@ namespace AriaGui.Engine
             c.Completed = t.Completed;
             c.Total = t.Total;
             c.Speed = t.Speed;
+            c.UpSpeed = t.UpSpeed;
             c.Eta = t.Eta;
             c.Percent = t.Percent;
             c.Error = t.Error;
@@ -630,6 +645,7 @@ namespace AriaGui.Engine
                 lock (_mu)
                 {
                     t.Speed = u.Speed;
+                    t.UpSpeed = u.UpSpeed;
                     EmitLocked(t.Id, t.Status);
                 }
                 return;
@@ -672,6 +688,7 @@ namespace AriaGui.Engine
                 if (u.Percent > 0) t.Percent = u.Percent;
                 else if (t.Total > 0 && t.Completed > 0) t.Percent = (double)t.Completed / (double)t.Total * 100.0;
                 t.Speed = u.Speed;
+                t.UpSpeed = u.UpSpeed;
                 t.Eta = u.Eta;
                 EmitLocked(t.Id, t.Status);
             }

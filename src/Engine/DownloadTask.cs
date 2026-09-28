@@ -43,6 +43,7 @@ namespace AriaGui.Engine
         public long Completed;
         public long Total;   // 0 = 未知（BT 元数据未就绪）
         public long Speed;   // bytes/s
+        public long UpSpeed; // bytes/s（上传；aria2 readout 的 UL 字段，BT 分享/做种时非零）
         public int Eta = -1; // 秒，-1 = 未知
         public double Percent;
         public string Error = "";

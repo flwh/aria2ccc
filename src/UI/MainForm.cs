@@ -182,7 +182,7 @@ namespace AriaGui.UI
             status.Controls.Add(_engineText);
 
             _statusSpeed = new Label();
-            _statusSpeed.Text = "↓ 0 B/s";
+            _statusSpeed.Text = "↓ 0 B/s  ↑ 0 B/s";
             _statusSpeed.Font = Theme.SmallFont;
             _statusSpeed.ForeColor = Theme.TextSecondary;
             _statusSpeed.AutoSize = true;
@@ -345,7 +345,12 @@ namespace AriaGui.UI
             {
                 if (t.Status == TaskStatus.Running) running++;
             }
-            _statusSpeed.Text = speed > 0 ? "↓ " + Parser.FormatSize(speed) + "/s" : "↓ 0 B/s";
+            long up = _mgr.TotalUpSpeed();
+            _statusSpeed.Text = (speed > 0 ? "↓ " + Parser.FormatSize(speed) + "/s" : "↓ 0 B/s")
+                + (up > 0 ? "  ↑ " + Parser.FormatSize(up) + "/s" : "  ↑ 0 B/s");
+            // 数值宽度随内容变化，重排右侧组避免与 NAT 文案重叠
+            if (_statusSpeed.Parent != null)
+                LayoutStatusRight(_statusSpeed.Parent, _statusSpeed, _natText, _engineDot, _engineText);
             if (DateTime.Now - _notifyAt >= TimeSpan.FromSeconds(5))
                 _statusLeft.Text = running > 0 ? "下载中 " + running + " 个任务" : "就绪";
         }
