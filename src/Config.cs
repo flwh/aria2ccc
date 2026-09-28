@@ -14,7 +14,7 @@ namespace AriaGui
         public string SpeedLimit = "";
         public int Split = 4;
         public string Trackers = "";
-        public bool RpcEnabled = false;
+        public bool RpcEnabled = true; // 默认开启：AriaNg 等外部工具开箱可连（仅监听本机）
         public int RpcPort = 6800;
         public string RpcSecret = "";
         public bool SniffEnabled = true; // 默认开启：与加开关前的行为保持一致
@@ -52,7 +52,7 @@ namespace AriaGui
             c.SpeedLimit = "";
             c.Split = 4;
             c.Trackers = BuiltinTrackers();
-            c.RpcEnabled = false;
+            c.RpcEnabled = true;
             c.RpcPort = 6800;
             c.RpcSecret = "";
             c.SniffEnabled = true;

@@ -11,6 +11,7 @@ namespace AriaGui.UI
         private readonly Config _cfg;
         private readonly Action<string> _notify;
         private readonly Action<bool> _applySniff;
+        private readonly Action _applyRpc;
 
         private readonly TextBox _dirBox;
         private readonly TextBox _concBox;
@@ -22,11 +23,12 @@ namespace AriaGui.UI
         private readonly TextBox _rpcSecretBox;
         private readonly CheckBox _sniffChk;
 
-        public SettingsView(Config cfg, Action<string> notify, Action<bool> applySniff)
+        public SettingsView(Config cfg, Action<string> notify, Action<bool> applySniff, Action applyRpc)
         {
             _cfg = cfg;
             _notify = notify;
             _applySniff = applySniff;
+            _applyRpc = applyRpc;
             BackColor = Theme.WindowBg;
 
             Panel card = new Panel();
@@ -133,7 +135,7 @@ namespace AriaGui.UI
             Win32.SetPlaceholder(_rpcSecretBox, "可空，如 mysecret");
 
             Label rpcHint = new Label();
-            rpcHint.Text = "同一时间由一个运行中的任务提供端口（仅监听本机）；保存后对新启动的任务生效。";
+            rpcHint.Text = "应用启动后常驻提供端口（仅监听本机）；保存后立即生效。";
             rpcHint.SetBounds(24, 334, 512, 16);
             rpcHint.Font = Theme.SmallFont;
             rpcHint.ForeColor = Theme.TextMuted;
@@ -239,9 +241,10 @@ namespace AriaGui.UI
                 MessageBox.Show(this, err, "设置", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 return;
             }
-            _notify("设置已保存（限速、分片、代理与 RPC 对新启动的任务生效；嗅探开关已即时生效）");
-            // 嗅探服务为应用级：保存后立即启停（RPC 则随任务启动生效）
+            _notify("设置已保存（限速、分片、代理对新启动的任务生效；嗅探与 RPC 已即时生效）");
+            // 嗅探与 RPC 均为应用级：保存后立即启停
             if (_applySniff != null) _applySniff(_sniffChk.Checked);
+            if (_applyRpc != null) _applyRpc();
         }
     }
 }

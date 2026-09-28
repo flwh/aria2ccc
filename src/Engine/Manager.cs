@@ -28,8 +28,8 @@ namespace AriaGui.Engine
         private readonly Queue<string> _queue = new Queue<string>();
         private int _seq;
         private int _running;
-        /// RPC 端口持有者任务 id：同一时间仅一个运行中任务可绑定配置的 RPC 端口（null=无）。
-        private string _rpcHolder;
+        /// RPC 常驻实例：应用运行期间持续提供 RPC 端口（AriaNg 等外部工具可随时连接）。
+        private Process _rpcHost;
 
         private readonly object _verMu = new object();
         private string _aria2Version; // 版本号缓存（null=未查询）；查询失败缓存空串
@@ -261,6 +261,72 @@ namespace AriaGui.Engine
             }
         }
 
+        /// 启动（或重启）常驻 RPC 实例：应用运行期间持续监听配置端口，与下载任务解耦；
+        /// 返回 null=成功，否则为错误提示。失败不抛异常（仅提示，不影响主功能）。
+        public string StartRpcHost()
+        {
+            StopRpcHost();
+            if (!_cfg.RpcEnabled) return null;
+            try
+            {
+                Process p = new Process();
+                ProcessStartInfo psi = new ProcessStartInfo();
+                psi.FileName = _bin;
+                psi.Arguments = JoinArgs(BuildRpcArgs(_cfg));
+                psi.UseShellExecute = false;
+                psi.CreateNoWindow = true;
+                psi.RedirectStandardOutput = true;
+                psi.RedirectStandardError = true;
+                p.StartInfo = psi;
+                // 读干输出，避免管道缓冲填满后子进程阻塞
+                p.OutputDataReceived += delegate { };
+                p.ErrorDataReceived += delegate { };
+                p.Start();
+                p.BeginOutputReadLine();
+                p.BeginErrorReadLine();
+                lock (_mu) { _rpcHost = p; }
+                // 端口被占用等错误会让 aria2c 立刻退出：稍候确认存活再宣布成功
+                if (p.WaitForExit(500))
+                {
+                    lock (_mu) { _rpcHost = null; }
+                    p.Dispose();
+                    return "RPC 服务启动失败（端口 " + _cfg.RpcPort.ToString(CultureInfo.InvariantCulture) + " 可能被占用）";
+                }
+                return null;
+            }
+            catch (Exception ex)
+            {
+                return "RPC 服务启动失败：" + ex.Message;
+            }
+        }
+
+        /// 停止常驻 RPC 实例（开关关闭或窗口关闭时调用）。
+        public void StopRpcHost()
+        {
+            Process p;
+            lock (_mu) { p = _rpcHost; _rpcHost = null; }
+            if (p == null) return;
+            try { if (!p.HasExited) p.Kill(); }
+            catch { }
+            try { p.Dispose(); } catch { }
+        }
+
+        /// 常驻 RPC 实例参数：无下载任务，仅提供 RPC 端口服务。
+        private static List<string> BuildRpcArgs(Config cfg)
+        {
+            List<string> args = new List<string>();
+            args.Add("--enable-rpc=true");
+            args.Add("--rpc-listen-port=" + cfg.RpcPort.ToString(CultureInfo.InvariantCulture));
+            args.Add("--rpc-allow-origin-all=true");
+            if (!string.IsNullOrEmpty(cfg.RpcSecret)) args.Add("--rpc-secret=" + cfg.RpcSecret);
+            args.Add("--no-conf");
+            args.Add("--console-log-level=warn");
+            args.Add("--dir=" + cfg.SaveDir); // AriaNg 等外部工具添加任务的默认目录
+            if (!string.IsNullOrEmpty(cfg.Proxy)) args.Add("--all-proxy=" + cfg.Proxy);
+            if (!string.IsNullOrEmpty(cfg.SpeedLimit)) args.Add("--max-overall-download-limit=" + cfg.SpeedLimit);
+            return args;
+        }
+
         // ---- 内部实现 ----
 
         private static DownloadTask Clone(DownloadTask t)
@@ -364,14 +430,6 @@ namespace AriaGui.Engine
                     return;
                 }
 
-                bool useRpc;
-                lock (_mu)
-                {
-                    // RPC 端口是单进程独占资源：先启动且端口空闲的任务持有，其余任务正常下载但不带 RPC
-                    useRpc = _cfg.RpcEnabled && _rpcHolder == null;
-                    if (useRpc) _rpcHolder = t.Id;
-                }
-
                 List<string> errTail = new List<string>();
                 object tailLock = new object();
                 DataReceivedEventHandler handler = delegate(object s, DataReceivedEventArgs e)
@@ -380,7 +438,7 @@ namespace AriaGui.Engine
                     HandleLine(t, e.Data, errTail, tailLock);
                 };
                 int exitCode;
-                if (!RunProcess(t, BuildArgs(t, _cfg, useRpc), handler, out exitCode)) return;
+                if (!RunProcess(t, BuildArgs(t, _cfg), handler, out exitCode)) return;
 
                 bool removeReq;
                 bool pauseReq;
@@ -420,7 +478,6 @@ namespace AriaGui.Engine
             {
                 lock (_mu)
                 {
-                    if (_rpcHolder == t.Id) _rpcHolder = null; // 释放 RPC 端口，后续启动的任务可接管
                     _running--;
                     PumpLocked();
                 }
@@ -733,8 +790,8 @@ namespace AriaGui.Engine
             return false;
         }
 
-        /// 组装 aria2c 命令行参数；useRpc 为该任务是否附加 RPC 服务（由调度器按端口持有情况决定）。
-        internal static List<string> BuildArgs(DownloadTask t, Config cfg, bool useRpc)
+        /// 组装 aria2c 任务命令行参数（RPC 由常驻实例单独提供，任务进程不再附挂）。
+        internal static List<string> BuildArgs(DownloadTask t, Config cfg)
         {
             List<string> args = new List<string>();
             args.Add(t.Url);
@@ -751,14 +808,6 @@ namespace AriaGui.Engine
             if (!string.IsNullOrEmpty(cfg.SpeedLimit)) args.Add("--max-overall-download-limit=" + cfg.SpeedLimit);
             // 网络代理：对 HTTP/HTTPS/FTP/BT 全协议生效（aria2 的 --all-proxy）
             if (!string.IsNullOrEmpty(cfg.Proxy)) args.Add("--all-proxy=" + cfg.Proxy);
-            if (useRpc)
-            {
-                // RPC 服务：仅监听本机，供 AriaNg 等外部工具连接
-                args.Add("--enable-rpc=true");
-                args.Add("--rpc-listen-port=" + cfg.RpcPort.ToString(CultureInfo.InvariantCulture));
-                args.Add("--rpc-allow-origin-all=true");
-                if (!string.IsNullOrEmpty(cfg.RpcSecret)) args.Add("--rpc-secret=" + cfg.RpcSecret);
-            }
             string lower = (t.Url == null ? "" : t.Url).ToLowerInvariant();
             if (t.IsMagnet() || lower.EndsWith(".torrent"))
             {

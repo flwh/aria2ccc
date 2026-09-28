@@ -77,7 +77,7 @@ namespace AriaGui.UI
                 try { _sniffer.Start(); }
                 catch { }
             }
-            _settingsV = new SettingsView(cfg, Notify, ApplySniff);
+            _settingsV = new SettingsView(cfg, Notify, ApplySniff, ApplyRpc);
             _settingsV.Dock = DockStyle.Fill;
             _settingsV.Visible = false;
             _pages = new Panel[] { _taskList, _trackerView, _historyV, _settingsV };
@@ -228,6 +228,7 @@ namespace AriaGui.UI
             if (aria2Ver != "") _engineText.Text = "引擎就绪 · aria2 " + aria2Ver;
             LayoutStatusRight(status, _statusSpeed, _natText, _engineDot, _engineText);
             StartNatCheck(status);
+            ApplyRpc(); // 常驻 RPC 实例：启用时应用运行期间始终可连（AriaNg 等）
         }
 
         protected override void OnFormClosed(FormClosedEventArgs e)
@@ -235,6 +236,7 @@ namespace AriaGui.UI
             _timer.Stop();
             // 退订 Manager 事件（不强杀 aria2c 子进程）
             _taskList.Detach();
+            _mgr.StopRpcHost(); // 收掉常驻 RPC 实例，避免孤儿进程
             base.OnFormClosed(e);
         }
 
@@ -376,6 +378,13 @@ namespace AriaGui.UI
             {
                 _sniffer.Stop();
             }
+        }
+
+        /// RPC 服务开关（设置页保存后回调，UI 线程）：立即重启常驻实例；失败（如端口被占用）提示。
+        private void ApplyRpc()
+        {
+            string err = _mgr.StartRpcHost();
+            if (err != null) Notify(err);
         }
 
         /// 嗅探服务回调（后台线程）：转 UI 线程弹确认窗（单链接预填 / 多链接批量）。
