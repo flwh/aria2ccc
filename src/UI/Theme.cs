@@ -13,6 +13,7 @@ namespace AriaGui.UI
         public static readonly Color Primary = Color.FromArgb(0, 122, 255);
         public static readonly Color PrimaryHover = Color.FromArgb(0, 105, 219);
         public static readonly Color PrimaryPressed = Color.FromArgb(0, 88, 183);
+        public static readonly Color PrimaryDisabled = Color.FromArgb(168, 199, 250);
         public static readonly Color Danger = Color.FromArgb(255, 59, 48);
         public static readonly Color DangerHover = Color.FromArgb(255, 241, 240);
         public static readonly Color Success = Color.FromArgb(52, 199, 89);
@@ -38,6 +39,7 @@ namespace AriaGui.UI
         public static readonly Font TitleFont = CreateFont("Microsoft YaHei UI", 10f, FontStyle.Bold);
         public static readonly Font StatusFont = CreateFont("Microsoft YaHei UI", 8.25f, FontStyle.Bold);
         public static readonly Font PageTitleFont = CreateFont("Microsoft YaHei UI", 15f, FontStyle.Bold);
+        public static readonly Font DialogTitleFont = CreateFont("Microsoft YaHei UI", 11.5f, FontStyle.Bold);
         public static readonly Font IconFont = CreateIconFont(11f);
         public static readonly Font IconFontLarge = CreateIconFont(24f);
         public static readonly Font MonoFont = CreateFont("Consolas", 9f, FontStyle.Regular);
@@ -95,16 +97,22 @@ namespace AriaGui.UI
             }
         }
 
-        /// 主按钮：蓝底白字扁平圆角。
+        /// 主按钮：蓝底白字扁平圆角（禁用时浅蓝底白字）。
         public static void StylePrimaryButton(FlatButton b)
         {
-            b.SetPalette(Primary, PrimaryHover, PrimaryPressed, Color.Empty, Color.White);
+            b.SetPalette(Primary, PrimaryHover, PrimaryPressed, Color.Empty, Color.White, PrimaryDisabled);
         }
 
         /// 次按钮：白底灰边。
         public static void StyleSecondaryButton(FlatButton b)
         {
             b.SetPalette(Color.White, HoverBg, WindowBg, Border, TextPrimary);
+        }
+
+        /// 对话框次按钮：浅灰底无边框（macOS 风格「取消」）。
+        public static void StyleGrayButton(FlatButton b)
+        {
+            b.SetPalette(TrackBg, Color.FromArgb(219, 219, 224), Color.FromArgb(205, 205, 210), Color.Empty, TextPrimary);
         }
 
         /// 危险幽灵按钮：白底红字（用于"删除"/"清空历史"）。
@@ -178,6 +186,9 @@ namespace AriaGui.UI
         private Color _down = Color.White;
         private Color _border = Color.Empty;
         private Color _text = Color.Black;
+        private Color _disabledFill = Color.Empty;   // 禁用态底色（Color.Empty = 沿用常态底色，仅置灰文字）
+        private string[] _icon;                      // 左侧图标（IconPark 线条 path，可选）
+        private int _iconSize = 18;
         private bool _hovering;
         private bool _pressing;
         private Region _round;   // 圆角裁剪区（圆角外不显示本控件像素，杜绝黑角/残影）
@@ -194,14 +205,23 @@ namespace AriaGui.UI
             Font = Theme.BaseFont;
         }
 
-        /// 注入配色：border 传 Color.Empty 表示无边框。
-        public void SetPalette(Color fill, Color hover, Color down, Color border, Color text)
+        /// 注入配色：border 传 Color.Empty 表示无边框；disabledFill 可选（禁用态底色）。
+        public void SetPalette(Color fill, Color hover, Color down, Color border, Color text, Color disabledFill = default(Color))
         {
             _fill = fill;
             _hover = hover;
             _down = down;
             _border = border;
             _text = text;
+            _disabledFill = disabledFill;
+            Invalidate();
+        }
+
+        /// 按钮左侧图标（IconPark 线条 path 数组），随文字整体居中。
+        public void SetIcon(string[] svgPaths, int size)
+        {
+            _icon = svgPaths;
+            _iconSize = size;
             Invalidate();
         }
 
@@ -265,7 +285,13 @@ namespace AriaGui.UI
             Graphics g = e.Graphics;
             g.SmoothingMode = SmoothingMode.AntiAlias;
             Color fill = _fill;
-            if (Enabled)
+            Color textColor = _text;
+            if (!Enabled)
+            {
+                if (_disabledFill != Color.Empty) fill = _disabledFill; // 禁用态专用底色（文字保持原色）
+                else textColor = Theme.TextMuted;
+            }
+            else
             {
                 if (_pressing) fill = _down;
                 else if (_hovering) fill = _hover;
@@ -286,9 +312,23 @@ namespace AriaGui.UI
                     g.DrawPath(pen, p2);
                 }
             }
-            TextRenderer.DrawText(g, Text, Font, r, Enabled ? _text : Theme.TextMuted,
-                TextFormatFlags.HorizontalCenter | TextFormatFlags.VerticalCenter
-                | TextFormatFlags.EndEllipsis | TextFormatFlags.NoPrefix);
+            if (_icon == null)
+            {
+                TextRenderer.DrawText(g, Text, Font, r, textColor,
+                    TextFormatFlags.HorizontalCenter | TextFormatFlags.VerticalCenter
+                    | TextFormatFlags.EndEllipsis | TextFormatFlags.NoPrefix);
+            }
+            else
+            {
+                // 图标 + 文字整体居中（图标色随文字）
+                Size ts = TextRenderer.MeasureText(g, Text, Font, new Size(int.MaxValue, r.Height), TextFormatFlags.NoPrefix);
+                int total = _iconSize + 6 + ts.Width;
+                int ix = r.X + (r.Width - total) / 2;
+                int iy = r.Y + (r.Height - _iconSize) / 2;
+                MiniSvg.DrawIcon(g, new Rectangle(ix, iy, _iconSize, _iconSize), textColor, _icon);
+                TextRenderer.DrawText(g, Text, Font, new Rectangle(ix + _iconSize + 6, r.Y, ts.Width + 2, r.Height), textColor,
+                    TextFormatFlags.Left | TextFormatFlags.VerticalCenter | TextFormatFlags.NoPrefix);
+            }
         }
     }
 
