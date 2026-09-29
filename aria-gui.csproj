@@ -25,6 +25,9 @@
     <Compile Include="src/**/*.cs" />
     <!-- 对齐 build.ps1 的 /resource:...,aria2c.exe（Embed.cs 按逻辑名 "aria2c.exe" 读取） -->
     <EmbeddedResource Include="assets/aria2c/aria2c.exe" LogicalName="aria2c.exe" />
+    <!-- SunnyUI 两个 dll 内嵌进 exe（Program.ResolveEmbedded 按逻辑名解析），保持单文件分发 -->
+    <EmbeddedResource Include="libs/SunnyUI.dll" LogicalName="SunnyUI.dll" />
+    <EmbeddedResource Include="libs/SunnyUI.Common.dll" LogicalName="SunnyUI.Common.dll" />
   </ItemGroup>
 
   <ItemGroup>
@@ -32,13 +35,18 @@
     <Reference Include="System.Core" />
     <Reference Include="System.Drawing" />
     <Reference Include="System.Windows.Forms" />
+    <!-- UI 库从仓库内 libs/ 引用（dll 已入库，避免依赖 NuGet 缓存） -->
+    <Reference Include="SunnyUI">
+      <HintPath>libs/SunnyUI.dll</HintPath>
+    </Reference>
+    <Reference Include="SunnyUI.Common">
+      <HintPath>libs/SunnyUI.Common.dll</HintPath>
+    </Reference>
   </ItemGroup>
 
   <ItemGroup>
     <!-- 非 Windows 环境下提供 net481 参考程序集（仅编译期，不分发） -->
     <PackageReference Include="Microsoft.NETFramework.ReferenceAssemblies" Version="1.0.3" PrivateAssets="All" />
-    <!-- UI 美化：SunnyUI（net40+，圆角窗体 + 主题色） -->
-    <PackageReference Include="SunnyUI" Version="3.9.8" />
   </ItemGroup>
 
 </Project>

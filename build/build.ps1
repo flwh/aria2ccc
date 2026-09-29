@@ -28,9 +28,20 @@ if (-not (Test-Path $icon)) {
 $srcs = @(Get-ChildItem (Join-Path $root "src") -Recurse -Filter *.cs -File | ForEach-Object { $_.FullName })
 
 $out = Join-Path $root "aria-gui.exe"
+# SunnyUI 引用 + 内嵌（与 csproj 的 Reference/EmbeddedResource 对齐）
+$sui = Join-Path $root "libs\SunnyUI.dll"
+$suiCommon = Join-Path $root "libs\SunnyUI.Common.dll"
+if (-not (Test-Path $sui) -or -not (Test-Path $suiCommon)) {
+    Write-Error "缺少 libs\SunnyUI.dll 或 libs\SunnyUI.Common.dll"
+    exit 1
+}
+
 & $csc /nologo /codepage:65001 /target:winexe /optimize+ "/out:$out" `
     /r:System.Windows.Forms.dll /r:System.Drawing.dll `
-    "/resource:$res,aria2c.exe" "/win32icon:$icon" @srcs
+    "/r:$sui" "/r:$suiCommon" `
+    "/resource:$res,aria2c.exe" `
+    "/resource:$sui,SunnyUI.dll" "/resource:$suiCommon,SunnyUI.Common.dll" `
+    "/win32icon:$icon" @srcs
 if ($LASTEXITCODE -ne 0) {
     Write-Error "编译失败（csc 退出码 $LASTEXITCODE）"
     exit 1

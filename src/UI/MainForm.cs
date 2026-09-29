@@ -9,7 +9,8 @@ using Sunny.UI;
 namespace AriaGui.UI
 {
     /// 主窗口：左侧导航栏 + 头部标题区（大标题/计数/操作）+ 内容区 + 底部状态栏。
-    /// UI 美化：基类换为 UIForm（SunnyUI），提供圆角边框 + 主题色；保留现有 borderless header 自绘区（位于 UIForm 自己画的 title 之下）。
+    /// 窗口标题栏与窗口按钮（最小化/最大化/关闭）统一由 SunnyUI UIForm 提供；
+    /// header 只保留页面标题与操作按钮，不再自绘第二组窗口按钮。
     public sealed class MainForm : UIForm
     {
         private readonly Manager _mgr;
@@ -32,10 +33,7 @@ namespace AriaGui.UI
         private readonly Label _engineDot;
         private readonly Label _engineText;
         private readonly Timer _timer;
-        private readonly FlatButton _addBtn;
-        private readonly WindowButton _minBtn;
-        private readonly WindowButton _maxBtn;
-        private readonly WindowButton _closeBtn;
+        private readonly UISymbolButton _addBtn;
 
         private DateTime _notifyAt = DateTime.MinValue;
 
@@ -58,7 +56,7 @@ namespace AriaGui.UI
             BackColor = Color.White;
             ClientSize = new Size(980, 640);
             MinimumSize = new Size(780, 520);
-            FormBorderStyle = FormBorderStyle.None; // 无边框：自绘标题栏 + WndProc 边缘缩放
+            FormBorderStyle = FormBorderStyle.None; // 无边框：标题栏由 UIForm 绘制；客户区边缘缩放见 WndProc
             StartPosition = FormStartPosition.CenterScreen;
             Icon appIcon = null;
             try { appIcon = Icon.ExtractAssociatedIcon(Application.ExecutablePath); }
@@ -119,33 +117,19 @@ namespace AriaGui.UI
             _pageCount.Location = new Point(140, 31);
             header.Controls.Add(_pageCount);
 
-            // 添加下载：加号图标按钮（主色圆角，位置由 LayoutHeaderButtons 重算）
-            _addBtn = new FlatButton();
-            _addBtn.Text = "\uE710";
-            _addBtn.Font = new Font(Theme.IconFont.FontFamily, 10f);
+            // 添加下载：SunnyUI 原生图标按钮（蓝色主题圆角，位置由 LayoutHeaderButtons 重算）
+            _addBtn = new UISymbolButton();
+            _addBtn.Style = UIStyle.Blue;
+            _addBtn.Symbol = 61543; // FontAwesome 加号
+            _addBtn.SymbolSize = 14;
             _addBtn.SetBounds(mainW - 16 - 34, 15, 34, 34);
-            Theme.StylePrimaryButton(_addBtn);
             _addBtn.Click += delegate { ShowAddDialog(); };
             header.Controls.Add(_addBtn);
 
-            // 无边框窗口控制按钮：最小化 / 最大化(还原) / 关闭（34x34 小圆角，与加号同一风格）
-            _minBtn = new WindowButton("\uE921", false);
-            _minBtn.Click += delegate { WindowState = FormWindowState.Minimized; };
-            _maxBtn = new WindowButton("\uE922", false);
-            _maxBtn.Click += delegate { ToggleMaximize(); };
-            _closeBtn = new WindowButton("\uE8BB", true);
-            _closeBtn.Click += delegate { Close(); };
-            header.Controls.Add(_minBtn);
-            header.Controls.Add(_maxBtn);
-            header.Controls.Add(_closeBtn);
-
-            // 自绘标题栏：拖拽移动 + 双击最大化
-            AttachTitleDrag(header);
-            AttachTitleDrag(_pageTitle);
-            AttachTitleDrag(_pageCount);
+            // 窗口按钮不再自绘：最小化/最大化/关闭统一由 UIForm 标题栏提供
 
             // 手动右对齐布局：Anchor 若在加入父容器前设置会按默认尺寸计算边距，Dock 生效后偏移飞出可视区
-            header.Resize += delegate { LayoutHeaderButtons(header, _addBtn, _minBtn, _maxBtn, _closeBtn); };
+            header.Resize += delegate { LayoutHeaderButtons(header, _addBtn); };
 
             // 底部状态栏：左状态文字，右速度 + 引擎状态
             Panel status = new Panel();
@@ -453,12 +437,6 @@ namespace AriaGui.UI
             Win32.ApplyFramelessChrome(Handle); // Win11: DWM 圆角 + 投影
         }
 
-        protected override void OnResize(EventArgs e)
-        {
-            base.OnResize(e);
-            UpdateMaxGlyph();
-        }
-
         protected override void WndProc(ref Message m)
         {
             if (m.Msg == Win32.WM_NCHITTEST && WindowState == FormWindowState.Normal)
@@ -502,57 +480,10 @@ namespace AriaGui.UI
             return 0;
         }
 
-        /// 标题区拖拽/双击：最大化时先按鼠标比例还原，再进入系统拖动循环（自带 Aero Snap）。
-        private void AttachTitleDrag(Control c)
-        {
-            c.MouseDown += delegate(object s, MouseEventArgs e)
-            {
-                if (e.Button != MouseButtons.Left || e.Clicks > 1) return;
-                if (WindowState == FormWindowState.Maximized)
-                {
-                    Point cursor = Cursor.Position;
-                    double ratio = Width <= 0 ? 0.5 : (double)cursor.X / Width;
-                    Rectangle rb = RestoreBounds;
-                    WindowState = FormWindowState.Normal;
-                    int x = cursor.X - (int)(rb.Width * ratio);
-                    int y = cursor.Y - Math.Max(8, rb.Height / 30);
-                    Screen sc = Screen.FromPoint(cursor);
-                    if (x < sc.WorkingArea.Left) x = sc.WorkingArea.Left;
-                    if (x + rb.Width > sc.WorkingArea.Right) x = sc.WorkingArea.Right - rb.Width;
-                    if (y < sc.WorkingArea.Top) y = sc.WorkingArea.Top;
-                    Location = new Point(x, y);
-                }
-                Win32.DragWindow(Handle);
-            };
-            c.MouseDoubleClick += delegate(object s, MouseEventArgs e)
-            {
-                if (e.Button != MouseButtons.Left) return;
-                ToggleMaximize();
-            };
-        }
-
-        /// 最大化/还原切换。
-        private void ToggleMaximize()
-        {
-            if (WindowState == FormWindowState.Maximized) WindowState = FormWindowState.Normal;
-            else WindowState = FormWindowState.Maximized;
-            UpdateMaxGlyph();
-        }
-
-        /// 最大化按钮字形随窗口状态切换（E922 最大化 / E923 还原）。
-        private void UpdateMaxGlyph()
-        {
-            if (_maxBtn == null) return;
-            _maxBtn.Text = WindowState == FormWindowState.Maximized ? "\uE923" : "\uE922";
-        }
-
         /// 头部右侧按钮布局（宽度变化时重算，避免 Anchor 在加入父容器前计算的偏移问题）。
-        private static void LayoutHeaderButtons(Control header, Control addBtn, Control minBtn, Control maxBtn, Control closeBtn)
+        private static void LayoutHeaderButtons(Control header, Control addBtn)
         {
-            closeBtn.Location = new Point(header.Width - 16 - closeBtn.Width, 15);
-            maxBtn.Location = new Point(closeBtn.Left - 6 - maxBtn.Width, 15);
-            minBtn.Location = new Point(maxBtn.Left - 6 - minBtn.Width, 15);
-            addBtn.Location = new Point(minBtn.Left - 16 - addBtn.Width, 15);
+            addBtn.Location = new Point(header.Width - 16 - addBtn.Width, 15);
         }
 
         /// 状态栏右侧组布局：速度 + NAT 检测 + 引擎绿点 + 引擎文字。
