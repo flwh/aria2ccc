@@ -10,11 +10,17 @@ namespace AriaGui.UI
     {
         public const int WidthPx = 200;
 
-        private static readonly string[] NavIcons = new string[] { "\uE896", "\uE774", "\uE81C", "\uE713" };
+        /// 导航图标（IconPark 线条风格，48 视图，绘制时统一描边；与文字同色：未选中灰、选中白）。
+        private static readonly string[][] NavIconPaths = new string[][]
+        {
+            MiniSvg.Icons.Download,
+            MiniSvg.Icons.Earth,
+            MiniSvg.Icons.History,
+            MiniSvg.Icons.Setting,
+        };
         private static readonly string[] NavTitles = new string[] { "下载", "Trackers", "历史", "设置" };
 
         private readonly Font _itemFont;
-        private readonly Font _iconFont;
         private readonly StringFormat _sf;
         private int _selected;
         private int _hover = -1;
@@ -37,7 +43,6 @@ namespace AriaGui.UI
                 | ControlStyles.OptimizedDoubleBuffer | ControlStyles.ResizeRedraw, true);
             Width = WidthPx;
             _itemFont = Theme.BaseFont;
-            _iconFont = Theme.IconFont;
             _sf = new StringFormat();
             _sf.LineAlignment = StringAlignment.Center;
             _sf.Alignment = StringAlignment.Near;
@@ -149,11 +154,10 @@ namespace AriaGui.UI
                     }
                 }
 
-                Color iconColor = sel ? Color.White : Theme.TextSecondary;
                 Color textColor = sel ? Color.White : Color.FromArgb(60, 60, 67);
-                using (SolidBrush ib = new SolidBrush(iconColor))
-                    g.DrawString(NavIcons[i], _iconFont, ib,
-                        new RectangleF(r.X + 14, r.Y, 28, r.Height), _sf);
+                // IconPark 线条图标（未选中灰、选中白）
+                Rectangle ir = new Rectangle(r.X + 12, r.Y + (r.Height - 20) / 2, 20, 20);
+                MiniSvg.DrawIcon(g, ir, textColor, NavIconPaths[i]);
                 using (SolidBrush tb = new SolidBrush(textColor))
                     g.DrawString(NavTitles[i], _itemFont, tb,
                         new RectangleF(r.X + 46, r.Y, r.Width - 58, r.Height), _sf);
@@ -169,8 +173,8 @@ namespace AriaGui.UI
                 using (SolidBrush sb = new SolidBrush(Color.FromArgb(236, 236, 240)))
                     g.FillPath(sb, p);
             }
-            using (SolidBrush ib = new SolidBrush(Theme.TextSecondary))
-                g.DrawString("\uE8B7", _iconFont, ib, new RectangleF(o.X + 14, o.Y, 28, o.Height), _sf);
+            Rectangle oi = new Rectangle(o.X + 12, o.Y + (o.Height - 20) / 2, 20, 20);
+            MiniSvg.DrawIcon(g, oi, Theme.Primary, MiniSvg.Icons.FolderOpen);
             using (SolidBrush tb = new SolidBrush(Color.FromArgb(60, 60, 67)))
                 g.DrawString("打开目录", _itemFont, tb, new RectangleF(o.X + 46, o.Y, o.Width - 58, o.Height), _sf);
         }

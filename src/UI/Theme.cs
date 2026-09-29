@@ -75,6 +75,13 @@ namespace AriaGui.UI
             return BaseFont;
         }
 
+        /// 标题栏应用图标：走 shell 提取（extract PNG-in-ICO 需系统 API，.NET 的 Icon 类直读 PNG 帧会花屏）。
+        public static Icon ExtractAppIcon()
+        {
+            try { return Icon.ExtractAssociatedIcon(Application.ExecutablePath); }
+            catch { return null; }
+        }
+
         /// 状态 → 展示色。
         public static Color StatusColor(Engine.TaskStatus s)
         {

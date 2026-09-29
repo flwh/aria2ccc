@@ -64,10 +64,12 @@ namespace AriaGui.UI
             MinimumSize = new Size(780, 520);
             FormBorderStyle = FormBorderStyle.None; // 无边框：标题栏由 UIForm 绘制；客户区边缘缩放见 WndProc
             StartPosition = FormStartPosition.CenterScreen;
-            Icon appIcon = null;
-            try { appIcon = Icon.ExtractAssociatedIcon(Application.ExecutablePath); }
-            catch { }
-            if (appIcon != null) Icon = appIcon;
+            Icon appIcon = Theme.ExtractAppIcon();
+            if (appIcon != null)
+            {
+                Icon = appIcon;
+                IconImage = appIcon.ToBitmap(); // 标题栏用 DrawImage 绘制（IconImage），规避 .NET 直读 PNG-in-ICO 花屏
+            }
 
             int mainW = ClientSize.Width - SideW;
 

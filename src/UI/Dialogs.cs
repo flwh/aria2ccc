@@ -25,6 +25,14 @@ namespace AriaGui.UI
             Text = title;
             Font = Theme.BaseFont;
             BackColor = Color.White;
+
+            // 标题栏图标与主窗口一致（IconImage 走 DrawImage，规避 .NET 直读 PNG-in-ICO 花屏）
+            Icon appIcon = Theme.ExtractAppIcon();
+            if (appIcon != null)
+            {
+                Icon = appIcon;
+                IconImage = appIcon.ToBitmap();
+            }
             Resizable = false;      // 固定尺寸（标题栏同步隐藏最大化按钮）
             ShowFullScreen = false; // 标题栏不显示全屏按钮
             MaximizeBox = false;
