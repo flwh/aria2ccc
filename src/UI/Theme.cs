@@ -9,27 +9,29 @@ namespace AriaGui.UI
     /// 统一主题：现代浅色配色、字体与控件样式辅助（基于系统自带能力，无第三方依赖）。
     internal static class Theme
     {
-        public static readonly Color Primary = Color.FromArgb(37, 99, 235);
-        public static readonly Color PrimaryHover = Color.FromArgb(29, 78, 216);
-        public static readonly Color PrimaryPressed = Color.FromArgb(30, 64, 175);
-        public static readonly Color Danger = Color.FromArgb(220, 38, 38);
-        public static readonly Color DangerHover = Color.FromArgb(254, 242, 242);
-        public static readonly Color Success = Color.FromArgb(22, 163, 74);
-        public static readonly Color WindowBg = Color.FromArgb(243, 244, 246);
+        // macOS 浅色风格配色：系统蓝 + 苹果灰阶；窗口 chrome（标题栏/头部/侧边栏/状态栏）浅灰、内容区白
+        public static readonly Color Primary = Color.FromArgb(0, 122, 255);
+        public static readonly Color PrimaryHover = Color.FromArgb(0, 105, 219);
+        public static readonly Color PrimaryPressed = Color.FromArgb(0, 88, 183);
+        public static readonly Color Danger = Color.FromArgb(255, 59, 48);
+        public static readonly Color DangerHover = Color.FromArgb(255, 241, 240);
+        public static readonly Color Success = Color.FromArgb(52, 199, 89);
+        public static readonly Color WindowBg = Color.White;
+        public static readonly Color ChromeBg = Color.FromArgb(245, 245, 247);
         public static readonly Color CardBg = Color.White;
-        public static readonly Color HoverBg = Color.FromArgb(249, 250, 251);
-        public static readonly Color Border = Color.FromArgb(229, 231, 235);
-        public static readonly Color InputBorder = Color.FromArgb(209, 213, 219);
-        public static readonly Color TrackBg = Color.FromArgb(229, 231, 235);
-        public static readonly Color TextPrimary = Color.FromArgb(17, 24, 39);
-        public static readonly Color TextSecondary = Color.FromArgb(107, 114, 128);
-        public static readonly Color TextMuted = Color.FromArgb(156, 163, 175);
-        public static readonly Color DangerPressed = Color.FromArgb(254, 226, 226);
+        public static readonly Color HoverBg = Color.FromArgb(245, 245, 247);
+        public static readonly Color Border = Color.FromArgb(210, 210, 215);
+        public static readonly Color InputBorder = Color.FromArgb(199, 199, 204);
+        public static readonly Color TrackBg = Color.FromArgb(229, 229, 234);
+        public static readonly Color TextPrimary = Color.FromArgb(29, 29, 31);
+        public static readonly Color TextSecondary = Color.FromArgb(134, 134, 139);
+        public static readonly Color TextMuted = Color.FromArgb(174, 174, 178);
+        public static readonly Color DangerPressed = Color.FromArgb(255, 224, 222);
 
-        /// 小圆角半径：卡片 / 按钮 / 输入框（统一的小圆角观感）。
-        public const int RadiusCard = 8;
-        public const int RadiusButton = 6;
-        public const int RadiusInput = 6;
+        /// 圆角半径：卡片 / 按钮 / 输入框（macOS 风格略大的圆角）。
+        public const int RadiusCard = 10;
+        public const int RadiusButton = 8;
+        public const int RadiusInput = 8;
 
         public static readonly Font BaseFont = CreateFont("Microsoft YaHei UI", 9f, FontStyle.Regular);
         public static readonly Font SmallFont = CreateFont("Microsoft YaHei UI", 8.25f, FontStyle.Regular);

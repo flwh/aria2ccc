@@ -5,7 +5,7 @@ using System.Windows.Forms;
 
 namespace AriaGui.UI
 {
-    /// 左侧导航栏：浅蓝渐变背景 + 自绘圆角导航项（图标 + 文本，含悬停/选中态）。
+    /// 左侧导航栏：macOS 风格浅灰背景（与窗口 chrome 同色）+ 自绘圆角导航项（图标 + 文本，含悬停/选中态）。
     public sealed class Sidebar : Control
     {
         public const int WidthPx = 200;
@@ -125,13 +125,12 @@ namespace AriaGui.UI
             g.SmoothingMode = SmoothingMode.AntiAlias;
             g.TextRenderingHint = System.Drawing.Text.TextRenderingHint.ClearTypeGridFit;
 
-            // 垂直渐变：左上浅蓝 → 下方近白（近似参考布局的侧栏质感）
-            using (LinearGradientBrush bg = new LinearGradientBrush(ClientRectangle,
-                Color.FromArgb(224, 237, 252), Color.FromArgb(249, 251, 255), LinearGradientMode.Vertical))
+            // macOS 风格：窗口 chrome 浅灰纯色（与标题栏/工具栏同色），右侧细分隔线
+            using (SolidBrush bg = new SolidBrush(Theme.ChromeBg))
             {
                 g.FillRectangle(bg, ClientRectangle);
             }
-            using (Pen edge = new Pen(Color.FromArgb(219, 230, 246)))
+            using (Pen edge = new Pen(Theme.TrackBg))
             {
                 g.DrawLine(edge, Width - 1, 0, Width - 1, Height);
             }
@@ -144,20 +143,14 @@ namespace AriaGui.UI
                 if (sel || i == _hover)
                 {
                     using (GraphicsPath p = Theme.RoundRect(r, 8))
-                    using (SolidBrush sb = new SolidBrush(sel ? Color.White : Color.FromArgb(120, 255, 255, 255)))
+                    using (SolidBrush sb = new SolidBrush(sel ? Color.FromArgb(220, 220, 224) : Color.FromArgb(236, 236, 240)))
                     {
                         g.FillPath(sb, p);
                     }
-                    if (sel)
-                    {
-                        using (GraphicsPath p2 = Theme.RoundRect(r, 8))
-                        using (Pen pen = new Pen(Color.FromArgb(226, 232, 240)))
-                            g.DrawPath(pen, p2);
-                    }
                 }
 
-                Color iconColor = sel ? Theme.Primary : Color.FromArgb(107, 114, 128);
-                Color textColor = sel ? Theme.TextPrimary : Color.FromArgb(75, 85, 99);
+                Color iconColor = sel ? Theme.Primary : Theme.TextSecondary;
+                Color textColor = sel ? Theme.TextPrimary : Color.FromArgb(60, 60, 67);
                 using (SolidBrush ib = new SolidBrush(iconColor))
                     g.DrawString(NavIcons[i], _iconFont, ib,
                         new RectangleF(r.X + 14, r.Y, 28, r.Height), _sf);
@@ -168,17 +161,17 @@ namespace AriaGui.UI
 
             // 底部「打开目录」动作按钮：分隔线 + 悬停高亮，不参与选中态
             Rectangle o = OpenRect;
-            using (Pen line = new Pen(Color.FromArgb(213, 226, 245)))
+            using (Pen line = new Pen(Theme.TrackBg))
                 g.DrawLine(line, PadX, o.Top - 10, Width - PadX, o.Top - 10);
             if (_hoverOpen)
             {
                 using (GraphicsPath p = Theme.RoundRect(o, 8))
-                using (SolidBrush sb = new SolidBrush(Color.FromArgb(120, 255, 255, 255)))
+                using (SolidBrush sb = new SolidBrush(Color.FromArgb(236, 236, 240)))
                     g.FillPath(sb, p);
             }
-            using (SolidBrush ib = new SolidBrush(Color.FromArgb(107, 114, 128)))
+            using (SolidBrush ib = new SolidBrush(Theme.TextSecondary))
                 g.DrawString("\uE8B7", _iconFont, ib, new RectangleF(o.X + 14, o.Y, 28, o.Height), _sf);
-            using (SolidBrush tb = new SolidBrush(Color.FromArgb(75, 85, 99)))
+            using (SolidBrush tb = new SolidBrush(Color.FromArgb(60, 60, 67)))
                 g.DrawString("打开目录", _itemFont, tb, new RectangleF(o.X + 46, o.Y, o.Width - 58, o.Height), _sf);
         }
 

@@ -43,14 +43,14 @@ namespace AriaGui.UI
 
         public MainForm(Manager mgr, Config cfg, HistoryStore hist)
         {
-            // SunnyUI 主题：标题栏改为浅色（白底深字），与内部浅色界面统一；蓝色只保留在按钮/选中态等点缀
+            // SunnyUI 主题：macOS 风格——窗口 chrome 统一浅灰（标题栏/头部/侧边栏/状态栏），内容区白
             this.StyleCustomMode = true;
             this.Style = UIStyle.Custom;
             this.RectColor = Theme.Border;
-            this.TitleColor = Color.White;
+            this.TitleColor = Theme.ChromeBg;
             this.TitleForeColor = Theme.TextPrimary;
             this.ControlBoxForeColor = Theme.TextSecondary;
-            this.ControlBoxFillHoverColor = Theme.WindowBg;
+            this.ControlBoxFillHoverColor = Theme.TrackBg;
             this.ControlBoxCloseFillHoverColor = Theme.Danger;
 
             _mgr = mgr;
@@ -104,7 +104,7 @@ namespace AriaGui.UI
             Panel header = new Panel();
             header.Dock = DockStyle.Top;
             header.Height = HeaderH;
-            header.BackColor = Color.White;
+            header.BackColor = Theme.ChromeBg;
             header.Paint += PaintBottomBorder;
 
             _pageTitle = new Label();
@@ -141,7 +141,7 @@ namespace AriaGui.UI
             Panel status = new Panel();
             status.Dock = DockStyle.Bottom;
             status.Height = StatusH;
-            status.BackColor = Color.White;
+            status.BackColor = Theme.ChromeBg;
             status.Paint += PaintTopBorder;
 
             _statusLeft = new Label();
