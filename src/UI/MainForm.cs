@@ -4,13 +4,13 @@ using System.Diagnostics;
 using System.Drawing;
 using System.Windows.Forms;
 using AriaGui.Engine;
-using Krypton.Toolkit;
+using Sunny.UI;
 
 namespace AriaGui.UI
 {
     /// 主窗口：左侧导航栏 + 头部标题区（大标题/计数/操作）+ 内容区 + 底部状态栏。
-    /// UI 美化：基类换为 KryptonForm，启用 Office2013White 全局调色板（保留现有 borderless + 自绘 header）。
-    public sealed class MainForm : KryptonForm
+    /// UI 美化：基类换为 UIForm（SunnyUI），提供圆角边框 + 主题色；保留现有 borderless header 自绘区（位于 UIForm 自己画的 title 之下）。
+    public sealed class MainForm : UIForm
     {
         private readonly Manager _mgr;
         private readonly Config _cfg;
@@ -45,8 +45,9 @@ namespace AriaGui.UI
 
         public MainForm(Manager mgr, Config cfg, HistoryStore hist)
         {
-            // Krypton 全局主题（一次设置影响当前进程内所有 Krypton* 控件）
-            KryptonManager.GlobalPaletteMode = PaletteMode.Office2013White;
+            // SunnyUI 主题：对齐现有蓝色 Primary，保留 borderless 但启用 UIForm 圆角/阴影
+            this.Style = UIStyle.Blue;
+            this.RectColor = Color.FromArgb(37, 99, 235);
 
             _mgr = mgr;
             _cfg = cfg;

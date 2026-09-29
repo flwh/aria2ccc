@@ -37,8 +37,8 @@
   <ItemGroup>
     <!-- 非 Windows 环境下提供 net481 参考程序集（仅编译期，不分发） -->
     <PackageReference Include="Microsoft.NETFramework.ReferenceAssemblies" Version="1.0.3" PrivateAssets="All" />
-    <!-- UI 美化：Krypton Toolkit（net472+，一次到位给 Krypton* 控件套 Office365 主题） -->
-    <PackageReference Include="Krypton.Toolkit" Version="105.26.7.201" />
+    <!-- UI 美化：SunnyUI（net40+，圆角窗体 + 主题色） -->
+    <PackageReference Include="SunnyUI" Version="3.9.8" />
   </ItemGroup>
 
 </Project>
