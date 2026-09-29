@@ -24,15 +24,13 @@ namespace AriaGui.UI
         private readonly TextBox _rpcPortBox;
         private readonly TextBox _rpcSecretBox;
         private readonly CheckBox _sniffChk;
+        private readonly CheckBox _bypassChk;
 
         private readonly SettingsGridItem[] _items = new SettingsGridItem[6];
         private readonly Panel[] _subPages = new Panel[6];
         private Panel _gridPage;
         private Panel _line1;
         private Panel _line2;
-
-        /// 「浏览器 UA」一键填充值（Chrome on Windows，可再手动编辑）。
-        private const string BrowserUa = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36";
 
         public SettingsView(Config cfg, Action<string> notify, Action<bool> applySniff, Action applyRpc)
         {
@@ -95,6 +93,14 @@ namespace AriaGui.UI
             _sniffChk.BackColor = Theme.CardBg;
             _sniffChk.Checked = cfg.SniffEnabled;
 
+            _bypassChk = new CheckBox();
+            _bypassChk.Text = "绕过防盗链（自动携带浏览器 UA 与来源页 Referer）";
+            _bypassChk.AutoSize = true;
+            _bypassChk.Font = Theme.BaseFont;
+            _bypassChk.ForeColor = Theme.TextPrimary;
+            _bypassChk.BackColor = Theme.CardBg;
+            _bypassChk.Checked = cfg.BypassHotlink;
+
             BuildSubPages();
             BuildGrid();
             ShowGrid();
@@ -145,8 +151,10 @@ namespace AriaGui.UI
             uaFill.Text = "浏览器 UA";
             uaFill.SetBounds(444, 120, 84, 28);
             Theme.StyleSecondaryButton(uaFill);
-            uaFill.Click += delegate { _uaBox.Text = BrowserUa; };
+            uaFill.Click += delegate { _uaBox.Text = Config.BrowserUa; };
             card.Controls.Add(uaFill);
+            _bypassChk.SetBounds(24, 152, 480, 22);
+            card.Controls.Add(_bypassChk);
             AddSave(card);
 
             // ---- RPC：开关 / 端口 / 密钥 ----
@@ -226,7 +234,7 @@ namespace AriaGui.UI
             string[] glyphs = new string[] { "\uE713", "\uE896", "\uE774", "\uE943", "\uE8A7", "\uE946" };
             string[] titles = new string[] { "通用", "下载", "网络", "RPC", "扩展", "关于" };
             string[] descs = new string[] {
-                "默认保存目录", "并发下载、分片与限速", "代理与 User-Agent",
+                "默认保存目录", "并发下载、分片与限速", "代理、UA 与防盗链绕过",
                 "AriaNg 等外部工具连接", "浏览器扩展嗅探推送", "版本、源码与许可" };
 
             for (int i = 0; i < _items.Length; i++)
@@ -363,6 +371,7 @@ namespace AriaGui.UI
             _cfg.Split = split;
             _cfg.Proxy = _proxyBox.Text.Trim();
             _cfg.UserAgent = _uaBox.Text.Trim();
+            _cfg.BypassHotlink = _bypassChk.Checked;
             _cfg.RpcEnabled = _rpcChk.Checked;
             _cfg.RpcPort = rpcPort;
             _cfg.RpcSecret = _rpcSecretBox.Text.Trim();
@@ -373,7 +382,7 @@ namespace AriaGui.UI
                 MessageBox.Show(this, err, "设置", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 return;
             }
-            _notify("设置已保存（限速、分片、代理、UA 对新启动的任务生效；嗅探与 RPC 已即时生效）");
+            _notify("设置已保存（限速、分片、代理、UA、防盗链对新启动的任务生效；嗅探与 RPC 已即时生效）");
             // 嗅探与 RPC 均为应用级：保存后立即启停
             if (_applySniff != null) _applySniff(_sniffChk.Checked);
             if (_applyRpc != null) _applyRpc();

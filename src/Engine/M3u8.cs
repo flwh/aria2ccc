@@ -55,13 +55,15 @@ namespace AriaGui.Engine
         /// 抓取清单文本；finalUrl 输出重定向后的实际地址（相对 URL 以它为基准）。
         /// proxy 为 http/https 地址时经由其访问；空串与 socks5 直连
         /// （.NET Framework 的 WebProxy 不支持 socks5，此情形仅 aria2 下载走代理）。
-        public static string FetchText(string url, string proxy, string userAgent, out string finalUrl)
+        /// referer 非空时作为来源页发送（防盗链绕过）。
+        public static string FetchText(string url, string proxy, string userAgent, string referer, out string finalUrl)
         {
             finalUrl = url;
             try { ServicePointManager.SecurityProtocol |= SecurityProtocolType.Tls12; }
             catch { }
             HttpWebRequest req = (HttpWebRequest)WebRequest.Create(url);
             req.UserAgent = string.IsNullOrEmpty(userAgent) ? UserAgent : userAgent;
+            if (!string.IsNullOrEmpty(referer)) req.Referer = referer;
             req.Timeout = 15000;
             req.ReadWriteTimeout = 15000;
             req.AllowAutoRedirect = true;
@@ -173,7 +175,8 @@ namespace AriaGui.Engine
         }
 
         /// 分片下载参数：单连接/分片 + 固定命名（out= 不被改写），进度与完成行供 UI 计数。
-        public static List<string> BuildSegmentArgs(Config cfg, string inputFile, string segDir)
+        /// refererUrl 为清单地址（防盗链绕过开启时推导来源页随分片请求发送）。
+        public static List<string> BuildSegmentArgs(Config cfg, string refererUrl, string inputFile, string segDir)
         {
             int mc = cfg.MaxConcurrent;
             if (mc < 1) mc = 1;
@@ -188,7 +191,13 @@ namespace AriaGui.Engine
             args.Add("--split=1");
             args.Add("--max-connection-per-server=1");
             args.Add("--max-concurrent-downloads=" + mc.ToString(CultureInfo.InvariantCulture));
-            args.Add("--user-agent=" + (string.IsNullOrEmpty(cfg.UserAgent) ? UserAgent : cfg.UserAgent));
+            args.Add("--user-agent=" + cfg.EffectiveUserAgent(UserAgent));
+            // 防盗链绕过：分片请求携带来源页（与普通任务同一规则）
+            if (cfg.BypassHotlink)
+            {
+                string referer = Config.RefererFor(refererUrl);
+                if (referer != "") args.Add("--referer=" + referer);
+            }
             if (!string.IsNullOrEmpty(cfg.SpeedLimit)) args.Add("--max-overall-download-limit=" + cfg.SpeedLimit);
             return args;
         }

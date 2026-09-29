@@ -341,7 +341,8 @@ namespace AriaGui.Engine
             args.Add("--console-log-level=warn");
             args.Add("--dir=" + cfg.SaveDir); // AriaNg 等外部工具添加任务的默认目录
             if (!string.IsNullOrEmpty(cfg.Proxy)) args.Add("--all-proxy=" + cfg.Proxy);
-            if (!string.IsNullOrEmpty(cfg.UserAgent)) args.Add("--user-agent=" + cfg.UserAgent);
+            string ua = cfg.EffectiveUserAgent("");
+            if (ua != "") args.Add("--user-agent=" + ua);
             if (!string.IsNullOrEmpty(cfg.SpeedLimit)) args.Add("--max-overall-download-limit=" + cfg.SpeedLimit);
             return args;
         }
@@ -601,7 +602,7 @@ namespace AriaGui.Engine
                 HandlePlaylistLine(t, e.Data, errTail, tailLock);
             };
             int exitCode;
-            if (!RunProcess(t, M3u8.BuildSegmentArgs(_cfg, listPath, segDir), handler, out exitCode)) return;
+            if (!RunProcess(t, M3u8.BuildSegmentArgs(_cfg, t.Url, listPath, segDir), handler, out exitCode)) return;
 
             if (Stopped(t)) return;
             if (exitCode != 0)
@@ -650,7 +651,9 @@ namespace AriaGui.Engine
                 string text;
                 try
                 {
-                    text = M3u8.FetchText(current, _cfg.Proxy, _cfg.UserAgent, out finalUrl);
+                    string ua = _cfg.EffectiveUserAgent(M3u8.UserAgent);
+                    string referer = _cfg.BypassHotlink ? Config.RefererFor(current) : "";
+                    text = M3u8.FetchText(current, _cfg.Proxy, ua, referer, out finalUrl);
                 }
                 catch (Exception ex)
                 {
@@ -827,8 +830,15 @@ namespace AriaGui.Engine
             if (!string.IsNullOrEmpty(cfg.SpeedLimit)) args.Add("--max-overall-download-limit=" + cfg.SpeedLimit);
             // 网络代理：对 HTTP/HTTPS/FTP/BT 全协议生效（aria2 的 --all-proxy）
             if (!string.IsNullOrEmpty(cfg.Proxy)) args.Add("--all-proxy=" + cfg.Proxy);
-            // User-Agent：部分站点校验 UA（留空时用 aria2 默认值）
-            if (!string.IsNullOrEmpty(cfg.UserAgent)) args.Add("--user-agent=" + cfg.UserAgent);
+            // User-Agent：部分站点校验 UA（留空时用 aria2 默认值；绕过防盗链时自动用浏览器 UA）
+            string ua = cfg.EffectiveUserAgent("");
+            if (ua != "") args.Add("--user-agent=" + ua);
+            // 防盗链绕过：自动携带来源页（仅 http/https；部分站点校验 Referer 拒绝下载工具）
+            if (cfg.BypassHotlink)
+            {
+                string referer = Config.RefererFor(t.Url);
+                if (referer != "") args.Add("--referer=" + referer);
+            }
             string lower = (t.Url == null ? "" : t.Url).ToLowerInvariant();
             if (t.IsMagnet() || lower.EndsWith(".torrent"))
             {

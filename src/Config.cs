@@ -20,6 +20,7 @@ namespace AriaGui
         public bool SniffEnabled = true; // 默认开启：与加开关前的行为保持一致
         public string Proxy = ""; // 网络代理（http/https/socks5 地址；空 = 直连）
         public string UserAgent = ""; // 下载 User-Agent（空 = aria2 默认；部分站点校验 UA）
+        public bool BypassHotlink = false; // 防盗链绕过：自动携带浏览器 UA 与来源页 Referer（部分站点拒绝下载工具）
 
         /// UTF-8 无 BOM 编码。
         public static readonly UTF8Encoding Utf8NoBom = new UTF8Encoding(false);
@@ -31,6 +32,27 @@ namespace AriaGui
         {
             if (string.IsNullOrEmpty(s)) return true;
             return SpeedLimitRe.IsMatch(s);
+        }
+
+        /// 浏览器 UA（Chrome on Windows）：防盗链绕过与设置页「浏览器 UA」一键填充共用。
+        public const string BrowserUa = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36";
+
+        /// 实际生效的 UA：自定义优先；开启防盗链绕过时用浏览器 UA；否则返回 fallback（调用方默认值，可为空）。
+        public string EffectiveUserAgent(string fallback)
+        {
+            if (!string.IsNullOrEmpty(UserAgent)) return UserAgent;
+            if (BypassHotlink) return BrowserUa;
+            return fallback;
+        }
+
+        /// 从下载 URL 推导 Referer（scheme://host[:port]/）；非 http/https 返回空串（防盗链绕过）。
+        public static string RefererFor(string url)
+        {
+            if (string.IsNullOrEmpty(url)) return "";
+            Uri u;
+            if (!Uri.TryCreate(url, UriKind.Absolute, out u)) return "";
+            if (u.Scheme != Uri.UriSchemeHttp && u.Scheme != Uri.UriSchemeHttps) return "";
+            return u.Scheme + "://" + u.Authority + "/";
         }
 
         /// 空串（直连）或 http/https/socks5 绝对地址返回 true。
@@ -59,6 +81,7 @@ namespace AriaGui
             c.SniffEnabled = true;
             c.Proxy = "";
             c.UserAgent = "";
+            c.BypassHotlink = false;
             return c;
         }
 
@@ -152,6 +175,7 @@ namespace AriaGui
             cfg.SniffEnabled = root.GetBool("sniff_enabled", cfg.SniffEnabled);
             cfg.Proxy = root.GetString("proxy", cfg.Proxy);
             cfg.UserAgent = root.GetString("user_agent", cfg.UserAgent);
+            cfg.BypassHotlink = root.GetBool("bypass_hotlink", cfg.BypassHotlink);
             Clamp(cfg);
         }
 
@@ -185,6 +209,7 @@ namespace AriaGui
             o.Set("sniff_enabled", SniffEnabled);
             o.Set("proxy", Proxy);
             o.Set("user_agent", UserAgent);
+            o.Set("bypass_hotlink", BypassHotlink);
             return o.ToJson();
         }
 
