@@ -15,14 +15,12 @@ namespace AriaGui.UI
 
         private readonly Font _itemFont;
         private readonly Font _iconFont;
-        private readonly Font _brandFont;
-        private readonly Bitmap _brandIcon;
         private readonly StringFormat _sf;
         private int _selected;
         private int _hover = -1;
         private bool _hoverOpen;
 
-        private const int BrandH = 64;
+        private const int TopPad = 12;
         private const int ItemH = 40;
         private const int ItemGap = 4;
         private const int PadX = 12;
@@ -33,19 +31,13 @@ namespace AriaGui.UI
         /// 点击底部「打开目录」动作按钮。
         public event EventHandler OpenFolderRequested;
 
-        public Sidebar(Icon appIcon)
+        public Sidebar()
         {
             SetStyle(ControlStyles.AllPaintingInWmPaint | ControlStyles.UserPaint
                 | ControlStyles.OptimizedDoubleBuffer | ControlStyles.ResizeRedraw, true);
             Width = WidthPx;
             _itemFont = Theme.BaseFont;
             _iconFont = Theme.IconFont;
-            _brandFont = Theme.TitleFont;
-            if (appIcon != null)
-            {
-                try { _brandIcon = appIcon.ToBitmap(); }
-                catch { _brandIcon = null; }
-            }
             _sf = new StringFormat();
             _sf.LineAlignment = StringAlignment.Center;
             _sf.Alignment = StringAlignment.Near;
@@ -71,7 +63,7 @@ namespace AriaGui.UI
 
         private Rectangle ItemRect(int i)
         {
-            return new Rectangle(PadX, BrandH + i * (ItemH + ItemGap), Width - PadX * 2, ItemH);
+            return new Rectangle(PadX, TopPad + i * (ItemH + ItemGap), Width - PadX * 2, ItemH);
         }
 
         /// 底部「打开目录」动作按钮区域（非导航项，不参与选中）。
@@ -144,16 +136,7 @@ namespace AriaGui.UI
                 g.DrawLine(edge, Width - 1, 0, Width - 1, Height);
             }
 
-            // 品牌区：应用图标 + 名称
-            if (_brandIcon != null)
-                g.DrawImage(_brandIcon, new Rectangle(16, 20, 24, 24));
-            using (SolidBrush tb = new SolidBrush(Theme.TextPrimary))
-                g.DrawString("Aria 下载器", _brandFont, tb, 48, 24);
-
-            using (Pen line = new Pen(Color.FromArgb(213, 226, 245)))
-                g.DrawLine(line, PadX, BrandH - 8, Width - PadX, BrandH - 8);
-
-            // 导航项
+            // 导航项（应用名已由窗口标题栏展示，此处不再重复品牌区）
             for (int i = 0; i < NavTitles.Length; i++)
             {
                 Rectangle r = ItemRect(i);
@@ -203,7 +186,6 @@ namespace AriaGui.UI
         {
             if (disposing)
             {
-                if (_brandIcon != null) _brandIcon.Dispose();
                 _sf.Dispose(); // 字体为 Theme 共享实例，不释放
             }
             base.Dispose(disposing);

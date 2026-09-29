@@ -43,9 +43,14 @@ namespace AriaGui.UI
 
         public MainForm(Manager mgr, Config cfg, HistoryStore hist)
         {
-            // SunnyUI 主题：对齐现有蓝色 Primary，保留 borderless 但启用 UIForm 圆角/阴影
-            this.Style = UIStyle.Blue;
-            this.RectColor = Color.FromArgb(37, 99, 235);
+            // SunnyUI 主题：标题栏自定义为项目主色（深蓝 #2563EB），与 + 按钮/侧边栏选中态颜色统一
+            this.StyleCustomMode = true;
+            this.Style = UIStyle.Custom;
+            this.RectColor = Theme.Primary;
+            this.TitleColor = Theme.Primary;
+            this.TitleForeColor = Color.White;
+            this.ControlBoxForeColor = Color.White;
+            this.ControlBoxFillHoverColor = Color.FromArgb(59, 130, 246);
 
             _mgr = mgr;
             _cfg = cfg;
@@ -188,7 +193,7 @@ namespace AriaGui.UI
             shell.Controls.Add(status);
             shell.Controls.Add(header);
 
-            _sidebar = new Sidebar(appIcon);
+            _sidebar = new Sidebar();
             _sidebar.Dock = DockStyle.Left;
             _sidebar.SelectedIndexChanged += delegate { SwitchPage(); };
             _sidebar.OpenFolderRequested += delegate { OpenSaveDir(); };
