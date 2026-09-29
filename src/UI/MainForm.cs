@@ -43,14 +43,15 @@ namespace AriaGui.UI
 
         public MainForm(Manager mgr, Config cfg, HistoryStore hist)
         {
-            // SunnyUI 主题：标题栏自定义为项目主色（深蓝 #2563EB），与 + 按钮/侧边栏选中态颜色统一
+            // SunnyUI 主题：标题栏改为浅色（白底深字），与内部浅色界面统一；蓝色只保留在按钮/选中态等点缀
             this.StyleCustomMode = true;
             this.Style = UIStyle.Custom;
-            this.RectColor = Theme.Primary;
-            this.TitleColor = Theme.Primary;
-            this.TitleForeColor = Color.White;
-            this.ControlBoxForeColor = Color.White;
-            this.ControlBoxFillHoverColor = Color.FromArgb(59, 130, 246);
+            this.RectColor = Theme.Border;
+            this.TitleColor = Color.White;
+            this.TitleForeColor = Theme.TextPrimary;
+            this.ControlBoxForeColor = Theme.TextSecondary;
+            this.ControlBoxFillHoverColor = Theme.WindowBg;
+            this.ControlBoxCloseFillHoverColor = Theme.Danger;
 
             _mgr = mgr;
             _cfg = cfg;
