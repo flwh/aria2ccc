@@ -1,8 +1,10 @@
 // popup 逻辑：读取当前标签页嗅探列表 → 渲染 → 单条/全部发送到 aria-gui（127.0.0.1:6866）。
+// 推送时附带当前页面地址（#ref= 行，URL 编码）：下载器用作 Referer，过防盗链校验。
 const PORT = 6866;
 const BASE = 'http://127.0.0.1:' + PORT;
 
 let tabId = -1;
+let pageUrl = '';
 
 const $dot = document.getElementById('dot');
 const $state = document.getElementById('state');
@@ -92,9 +94,10 @@ function render(urls) {
 }
 
 async function post(urls) {
+  const head = pageUrl ? '#ref=' + encodeURIComponent(pageUrl) + '\n' : '';
   const r = await fetchTimeout(
     BASE + '/add',
-    { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=UTF-8' }, body: urls.join('\n') },
+    { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=UTF-8' }, body: head + urls.join('\n') },
     8000
   );
   if (!r.ok) throw new Error('HTTP ' + r.status);
@@ -182,7 +185,7 @@ async function clearAll() {
 
 async function init() {
   const tabs = await chrome.tabs.query({ active: true, currentWindow: true });
-  if (tabs.length) tabId = tabs[0].id;
+  if (tabs.length) { tabId = tabs[0].id; pageUrl = tabs[0].url || ''; }
   const ok = await checkConn();
   setConn(ok);
   let list = [];

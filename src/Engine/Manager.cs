@@ -120,8 +120,8 @@ namespace AriaGui.Engine
             }
         }
 
-        /// 新建任务并入队。dir 为空时使用配置的默认目录。
-        public DownloadTask AddTask(string url, string dir, string output)
+        /// 新建任务并入队。dir 为空时使用配置的默认目录；referer 为嗅探携带的来源页（可空）。
+        public DownloadTask AddTask(string url, string dir, string output, string referer = null)
         {
             url = (url == null ? "" : url).Trim();
             if (url == "") throw new InvalidOperationException("URL 不能为空");
@@ -140,6 +140,7 @@ namespace AriaGui.Engine
                 t.Url = url;
                 t.Dir = dir;
                 t.Output = (output == null ? "" : output).Trim();
+                t.Referer = (referer == null ? "" : referer.Trim());
                 t.IsPlaylist = M3u8.IsPlaylistUrl(url);
                 if (t.IsPlaylist && t.Output == "") t.Output = M3u8.GuessOutputName(url);
                 t.Status = TaskStatus.Queued;
@@ -356,6 +357,7 @@ namespace AriaGui.Engine
             c.Url = t.Url;
             c.Dir = t.Dir;
             c.Output = t.Output;
+            c.Referer = t.Referer;
             c.Status = t.Status;
             c.Completed = t.Completed;
             c.Total = t.Total;
@@ -602,7 +604,8 @@ namespace AriaGui.Engine
                 HandlePlaylistLine(t, e.Data, errTail, tailLock);
             };
             int exitCode;
-            if (!RunProcess(t, M3u8.BuildSegmentArgs(_cfg, t.Url, listPath, segDir), handler, out exitCode)) return;
+            string segReferer = ResolveReferer(t, _cfg, t.Url);
+            if (!RunProcess(t, M3u8.BuildSegmentArgs(_cfg, segReferer, listPath, segDir), handler, out exitCode)) return;
 
             if (Stopped(t)) return;
             if (exitCode != 0)
@@ -652,7 +655,7 @@ namespace AriaGui.Engine
                 try
                 {
                     string ua = _cfg.EffectiveUserAgent(M3u8.UserAgent);
-                    string referer = _cfg.BypassHotlink ? Config.RefererFor(current) : "";
+                    string referer = ResolveReferer(t, _cfg, current);
                     text = M3u8.FetchText(current, _cfg.Proxy, ua, referer, out finalUrl);
                 }
                 catch (Exception ex)
@@ -812,6 +815,14 @@ namespace AriaGui.Engine
             return false;
         }
 
+        /// 任务实际使用的 Referer：嗅探携带的页面地址优先；否则防盗链绕过开关按来源 URL 推导；均无为空串。
+        internal static string ResolveReferer(DownloadTask t, Config cfg, string urlForOrigin)
+        {
+            if (t != null && !string.IsNullOrEmpty(t.Referer)) return t.Referer;
+            if (cfg.BypassHotlink) return Config.RefererFor(urlForOrigin);
+            return "";
+        }
+
         /// 组装 aria2c 任务命令行参数（RPC 由常驻实例单独提供，任务进程不再附挂）。
         internal static List<string> BuildArgs(DownloadTask t, Config cfg)
         {
@@ -833,12 +844,9 @@ namespace AriaGui.Engine
             // User-Agent：部分站点校验 UA（留空时用 aria2 默认值；绕过防盗链时自动用浏览器 UA）
             string ua = cfg.EffectiveUserAgent("");
             if (ua != "") args.Add("--user-agent=" + ua);
-            // 防盗链绕过：自动携带来源页（仅 http/https；部分站点校验 Referer 拒绝下载工具）
-            if (cfg.BypassHotlink)
-            {
-                string referer = Config.RefererFor(t.Url);
-                if (referer != "") args.Add("--referer=" + referer);
-            }
+            // Referer：嗅探携带的页面地址优先；否则防盗链绕过开关按下载地址推导（仅 http/https）
+            string referer = ResolveReferer(t, cfg, t.Url);
+            if (referer != "") args.Add("--referer=" + referer);
             string lower = (t.Url == null ? "" : t.Url).ToLowerInvariant();
             if (t.IsMagnet() || lower.EndsWith(".torrent"))
             {

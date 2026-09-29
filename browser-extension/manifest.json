@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
   "name": "Aria 下载器嗅探",
-  "version": "1.1.0",
-  "description": "嗅探页面媒体与下载直链，一键发送到 Aria 下载器；支持手动输入地址推送（需 aria-gui 正在运行）。",
+  "version": "1.2.0",
+  "description": "嗅探页面媒体与下载直链并携带页面地址（Referer，可过防盗链校验），一键发送到 Aria 下载器；支持手动输入地址推送（需 aria-gui 正在运行）。",
   "minimum_chrome_version": "102",
   "permissions": ["webRequest", "tabs", "storage"],
   "host_permissions": ["http://*/*", "https://*/*"],

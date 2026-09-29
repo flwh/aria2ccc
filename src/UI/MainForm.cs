@@ -385,15 +385,15 @@ namespace AriaGui.UI
             if (err != null) Notify(err);
         }
 
-        /// 嗅探服务回调（后台线程）：转 UI 线程弹确认窗（单链接预填 / 多链接批量）。
-        public void OnSniffedUrls(List<string> urls)
+        /// 嗅探服务回调（后台线程）：转 UI 线程弹确认窗（单链接预填 / 多链接批量）；referer 为页面来源地址。
+        public void OnSniffedUrls(string referer, List<string> urls)
         {
             if (urls == null || urls.Count == 0) return;
             try
             {
                 IntPtr h = Handle; // 访问 Handle 确保句柄已创建（Application.Run 前也可能收到请求）
                 if (h == IntPtr.Zero) return;
-                BeginInvoke((MethodInvoker)delegate { ShowSniffDialog(urls); });
+                BeginInvoke((MethodInvoker)delegate { ShowSniffDialog(referer, urls); });
             }
             catch
             {
@@ -401,20 +401,20 @@ namespace AriaGui.UI
             }
         }
 
-        /// 展示嗅探结果：单链接预填添加对话框；多链接走批量确认窗。
-        private void ShowSniffDialog(List<string> urls)
+        /// 展示嗅探结果：单链接预填添加对话框；多链接走批量确认窗（referer 随任务携带）。
+        private void ShowSniffDialog(string referer, List<string> urls)
         {
             if (IsDisposed) return;
             if (urls.Count == 1)
             {
-                using (AddDialogForm dlg = new AddDialogForm(_mgr, Notify, _cfg.SaveDir, urls[0]))
+                using (AddDialogForm dlg = new AddDialogForm(_mgr, Notify, _cfg.SaveDir, urls[0], referer))
                 {
                     dlg.ShowDialog(this);
                 }
             }
             else
             {
-                using (SniffBatchForm dlg = new SniffBatchForm(_mgr, Notify, _cfg.SaveDir, urls))
+                using (SniffBatchForm dlg = new SniffBatchForm(_mgr, Notify, _cfg.SaveDir, urls, referer))
                 {
                     dlg.ShowDialog(this);
                 }

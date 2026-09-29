@@ -39,6 +39,7 @@ namespace AriaGui.Engine
         public string Url = "";
         public string Dir = "";
         public string Output = "";
+        public string Referer = ""; // 来源页地址（浏览器嗅探携带；防盗链校验用，可空）
         public TaskStatus Status;
         public long Completed;
         public long Total;   // 0 = 未知（BT 元数据未就绪）

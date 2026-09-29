@@ -9,7 +9,8 @@ using System.Threading;
 
 namespace AriaGui.Engine
 {
-    /// 浏览器扩展嗅探接收端：仅监听本机回环地址，POST /add 以换行分隔文本接收媒体链接。
+    /// 浏览器扩展嗅探接收端：仅监听本机回环地址，POST /add 以换行分隔文本接收媒体链接；
+    /// 可选首部 `#ref=<URL编码页面地址>` 行携带来源页（Referer，防盗链用）。
     /// 手写极简 HTTP（TcpListener），避免 HttpListener 的 URL ACL 管理员权限要求。
     public sealed class Sniffer
     {
@@ -17,12 +18,12 @@ namespace AriaGui.Engine
         public const int DefaultPort = 6866;
 
         private readonly int _port;
-        private readonly Action<List<string>> _onUrls;
+        private readonly Action<string, List<string>> _onUrls;
         private TcpListener _listener;
         private Thread _thread;
         private volatile bool _running;
 
-        public Sniffer(int port, Action<List<string>> onUrls)
+        public Sniffer(int port, Action<string, List<string>> onUrls)
         {
             _port = port;
             _onUrls = onUrls;
@@ -116,13 +117,14 @@ namespace AriaGui.Engine
                 }
                 string body = ReadBody(ns, len);
                 if (body == null) return;
-                List<string> urls = ParseUrls(body);
+                string referer;
+                List<string> urls = ParseUrls(body, out referer);
                 if (urls.Count == 0)
                 {
                     WriteResponse(ns, 400, "{\"ok\":false,\"error\":\"no valid url\"}");
                     return;
                 }
-                if (_onUrls != null) _onUrls(urls);
+                if (_onUrls != null) _onUrls(referer, urls);
                 WriteResponse(ns, 200, "{\"ok\":true,\"count\":" + urls.Count.ToString(CultureInfo.InvariantCulture) + "}");
                 return;
             }
@@ -177,19 +179,44 @@ namespace AriaGui.Engine
             return Encoding.UTF8.GetString(buf);
         }
 
-        /// 解析请求体：每行一个链接，仅保留受支持前缀并去重（保持顺序）。
-        private static List<string> ParseUrls(string body)
+        /// 解析请求体：可选首部 `#ref=<URL编码页面地址>` 行为来源页（防盗链用）；
+        /// 其余每行一个链接，仅保留受支持前缀并去重（保持顺序）。
+        private static List<string> ParseUrls(string body, out string referer)
         {
+            referer = "";
             List<string> urls = new List<string>();
             HashSet<string> seen = new HashSet<string>(StringComparer.Ordinal);
             string[] lines = body.Split(new char[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries);
             for (int i = 0; i < lines.Length; i++)
             {
                 string u = lines[i].Trim();
-                if (u.Length == 0 || !IsSupportedUrl(u)) continue;
+                if (u.Length == 0) continue;
+                if (u.StartsWith("#ref=", StringComparison.Ordinal))
+                {
+                    referer = DecodeReferer(u.Substring(5));
+                    continue;
+                }
+                if (!IsSupportedUrl(u)) continue;
                 if (seen.Add(u)) urls.Add(u);
             }
             return urls;
+        }
+
+        /// 解码来源页并校验：仅接受 http/https、长度 1-2048；非法返回空串。
+        private static string DecodeReferer(string encoded)
+        {
+            try
+            {
+                string s = Uri.UnescapeDataString(encoded).Trim();
+                if (s.Length == 0 || s.Length > 2048) return "";
+                if (!s.StartsWith("http://", StringComparison.OrdinalIgnoreCase)
+                    && !s.StartsWith("https://", StringComparison.OrdinalIgnoreCase)) return "";
+                return s;
+            }
+            catch
+            {
+                return "";
+            }
         }
 
         /// 仅接受下载器支持的链接前缀（防御任意文本注入）。

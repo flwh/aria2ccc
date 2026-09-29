@@ -175,8 +175,8 @@ namespace AriaGui.Engine
         }
 
         /// 分片下载参数：单连接/分片 + 固定命名（out= 不被改写），进度与完成行供 UI 计数。
-        /// refererUrl 为清单地址（防盗链绕过开启时推导来源页随分片请求发送）。
-        public static List<string> BuildSegmentArgs(Config cfg, string refererUrl, string inputFile, string segDir)
+        /// referer 非空时随分片请求发送（嗅探携带的页面地址或防盗链绕过推导）。
+        public static List<string> BuildSegmentArgs(Config cfg, string referer, string inputFile, string segDir)
         {
             int mc = cfg.MaxConcurrent;
             if (mc < 1) mc = 1;
@@ -192,12 +192,7 @@ namespace AriaGui.Engine
             args.Add("--max-connection-per-server=1");
             args.Add("--max-concurrent-downloads=" + mc.ToString(CultureInfo.InvariantCulture));
             args.Add("--user-agent=" + cfg.EffectiveUserAgent(UserAgent));
-            // 防盗链绕过：分片请求携带来源页（与普通任务同一规则）
-            if (cfg.BypassHotlink)
-            {
-                string referer = Config.RefererFor(refererUrl);
-                if (referer != "") args.Add("--referer=" + referer);
-            }
+            if (!string.IsNullOrEmpty(referer)) args.Add("--referer=" + referer);
             if (!string.IsNullOrEmpty(cfg.SpeedLimit)) args.Add("--max-overall-download-limit=" + cfg.SpeedLimit);
             return args;
         }

@@ -114,18 +114,20 @@ namespace AriaGui.UI
     }
 
     /// 添加下载对话框（极简卡片）：输入 URL 或选择 .torrent 种子文件；
-    /// 保存目录用默认目录、文件名自动命名（initialUrl 供浏览器嗅探预填）。
+    /// 保存目录用默认目录、文件名自动命名（initialUrl / referer 供浏览器嗅探预填与防盗链携带）。
     public sealed class AddDialogForm : ThemedDialog
     {
         private readonly Manager _mgr;
         private readonly Action<string> _notify;
         private readonly TextBox _urlBox;
+        private readonly string _referer; // 嗅探来源页（随任务携带，防盗链校验用；可空）
 
-        public AddDialogForm(Manager mgr, Action<string> notify, string defaultDir, string initialUrl = null)
+        public AddDialogForm(Manager mgr, Action<string> notify, string defaultDir, string initialUrl = null, string referer = null)
             : base("添加下载", new Size(560, 186))
         {
             _mgr = mgr;
             _notify = notify;
+            _referer = referer;
 
             Label urlLabel = new Label();
             urlLabel.Text = "输入 URL 或者选择种子文件";
@@ -170,7 +172,7 @@ namespace AriaGui.UI
         {
             try
             {
-                DownloadTask task = _mgr.AddTask(_urlBox.Text, "", "");
+                DownloadTask task = _mgr.AddTask(_urlBox.Text, "", "", _referer);
                 _notify("已添加任务: " + task.DisplayName());
                 DialogResult = DialogResult.OK; // 关闭对话框
             }
@@ -187,14 +189,16 @@ namespace AriaGui.UI
         private readonly Manager _mgr;
         private readonly Action<string> _notify;
         private readonly string _saveDir;
+        private readonly string _referer; // 嗅探来源页（随任务携带，防盗链校验用；可空）
         private readonly CheckedListBox _list;
 
-        public SniffBatchForm(Manager mgr, Action<string> notify, string saveDir, List<string> urls)
+        public SniffBatchForm(Manager mgr, Action<string> notify, string saveDir, List<string> urls, string referer = null)
             : base("嗅探结果", new Size(560, 420))
         {
             _mgr = mgr;
             _notify = notify;
             _saveDir = saveDir;
+            _referer = referer;
 
             Label tip = new Label();
             tip.Text = "从浏览器嗅探到 " + urls.Count + " 个链接（已全部选中），确认后加入下载队列：";
@@ -228,7 +232,7 @@ namespace AriaGui.UI
                 string url = (string)_list.CheckedItems[i];
                 try
                 {
-                    _mgr.AddTask(url, _saveDir, "");
+                    _mgr.AddTask(url, _saveDir, "", _referer);
                     added++;
                 }
                 catch (InvalidOperationException ex)
