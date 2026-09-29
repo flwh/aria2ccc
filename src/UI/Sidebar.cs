@@ -143,14 +143,14 @@ namespace AriaGui.UI
                 if (sel || i == _hover)
                 {
                     using (GraphicsPath p = Theme.RoundRect(r, 8))
-                    using (SolidBrush sb = new SolidBrush(sel ? Color.FromArgb(220, 220, 224) : Color.FromArgb(236, 236, 240)))
+                    using (SolidBrush sb = new SolidBrush(sel ? Theme.Primary : Color.FromArgb(236, 236, 240)))
                     {
                         g.FillPath(sb, p);
                     }
                 }
 
-                Color iconColor = sel ? Theme.Primary : Theme.TextSecondary;
-                Color textColor = sel ? Theme.TextPrimary : Color.FromArgb(60, 60, 67);
+                Color iconColor = sel ? Color.White : Theme.TextSecondary;
+                Color textColor = sel ? Color.White : Color.FromArgb(60, 60, 67);
                 using (SolidBrush ib = new SolidBrush(iconColor))
                     g.DrawString(NavIcons[i], _iconFont, ib,
                         new RectangleF(r.X + 14, r.Y, 28, r.Height), _sf);

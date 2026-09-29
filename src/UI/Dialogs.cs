@@ -3,18 +3,30 @@ using System.Collections.Generic;
 using System.Drawing;
 using System.Windows.Forms;
 using AriaGui.Engine;
+using Sunny.UI;
 
 namespace AriaGui.UI
 {
-    /// 主题化模态对话框基类：固定尺寸、居中、白色底 + 右下角「主操作/取消」按钮对。
-    public abstract class ThemedDialog : Form
+    /// 主题化模态对话框基类：SunnyUI 风格（与主窗口同款定制标题栏）、固定尺寸、居中、白底 + 右下角「主操作/取消」按钮对。
+    public abstract class ThemedDialog : UIForm
     {
         protected ThemedDialog(string title, Size clientSize)
         {
+            // 与主窗口一致的 SunnyUI 定制标题栏（浅灰 chrome + 深色文字），替换颜色不一致的系统标题栏
+            StyleCustomMode = true;
+            Style = UIStyle.Custom;
+            RectColor = Theme.Border;
+            TitleColor = Theme.ChromeBg;
+            TitleForeColor = Theme.TextPrimary;
+            ControlBoxForeColor = Theme.TextSecondary;
+            ControlBoxFillHoverColor = Theme.TrackBg;
+            ControlBoxCloseFillHoverColor = Theme.Danger;
+
             Text = title;
             Font = Theme.BaseFont;
             BackColor = Color.White;
-            FormBorderStyle = FormBorderStyle.FixedDialog;
+            Resizable = false;      // 固定尺寸（标题栏同步隐藏最大化按钮）
+            ShowFullScreen = false; // 标题栏不显示全屏按钮
             MaximizeBox = false;
             MinimizeBox = false;
             ShowInTaskbar = false;
@@ -57,7 +69,7 @@ namespace AriaGui.UI
         private readonly TextBox _nameBox;
 
         public AddDialogForm(Manager mgr, Action<string> notify, string defaultDir, string initialUrl = null)
-            : base("添加下载", new Size(560, 218))
+            : base("添加下载", new Size(560, 253)) // 含 SunnyUI 标题栏 35px（控件加入时自动下移）
         {
             _mgr = mgr;
             _notify = notify;
@@ -136,7 +148,7 @@ namespace AriaGui.UI
         private readonly CheckedListBox _list;
 
         public SniffBatchForm(Manager mgr, Action<string> notify, string saveDir, List<string> urls)
-            : base("嗅探结果", new Size(560, 400))
+            : base("嗅探结果", new Size(560, 435)) // 含 SunnyUI 标题栏 35px（控件加入时自动下移）
         {
             _mgr = mgr;
             _notify = notify;
